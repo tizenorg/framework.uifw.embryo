@@ -7,7 +7,8 @@ DEB_DH_STRIP_ARGS := --dbg-package=libembryo-dbg
 DEB_CONFIGURE_EXTRA_FLAGS :=
 DEB_CONFIGURE_SCRIPT := ./autogen.sh
 DEB_MAKE_CLEAN_TARGET := distclean
-DEB_SOURCE_VERSION := $(shell grep AC_INIT $(DEB_SRCDIR)/configure.ac | cut -d, -f2 | tr -d ' []')
+#DEB_SOURCE_VERSION := $(shell grep AC_INIT $(DEB_SRCDIR)/configure.ac | cut -d, -f2 | tr -d ' []')
+DEB_SOURCE_VERSION := 0.9.9.0
 CFLAGS += -fvisibility=hidden
 LDFLAGS += -fvisibility=hidden
 
