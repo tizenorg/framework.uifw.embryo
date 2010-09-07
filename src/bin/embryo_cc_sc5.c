@@ -1,7 +1,4 @@
-/*
- *  vim:ts=8:sw=3:sts=8:noexpandtab:cino=>5n-3f0^-2{2
- *
- *  Small compiler - Error message system
+/*  Small compiler - Error message system
  *  In fact a very simple system, using only 'panic mode'.
  *
  *  Copyright (c) ITB CompuPhase, 1997-2003
@@ -22,12 +19,9 @@
  *      misrepresented as being the original software.
  *  3.  This notice may not be removed or altered from any source distribution.
  *
- *  Version: $Id: embryo_cc_sc5.c 45192 2010-01-15 19:44:25Z englebass $
+ *  Version: $Id: embryo_cc_sc5.c 51023 2010-08-11 20:35:26Z lucas $
  */
 
-/*
- * vim:ts=8:sw=3:sts=8:noexpandtab:cino=>5n-3f0^-2{2
- */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -116,7 +110,7 @@ error(int number, ...)
 	sc_error(0, "\nCompilation aborted.", NULL, 0, 0, argptr);
 	va_end(argptr);
 
-	if (outf != NULL)
+	if (outf)
 	  {
 	     sc_closeasm(outf);
 	     outf = NULL;
