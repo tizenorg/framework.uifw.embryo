@@ -1,7 +1,7 @@
 /*  Abstract Machine for the Small compiler
  *
  *  Copyright (c) ITB CompuPhase, 1997-2003
- *  Portions Copyright (c) Carsten Haitzler, 2004 <raster@rasterman.com>
+ *  Portions Copyright (c) Carsten Haitzler, 2004-2010 <raster@rasterman.com>
  *
  *  This software is provided "as-is", without any express or implied warranty.
  *  In no event will the authors be held liable for any damages arising from
@@ -20,9 +20,6 @@
  *  3.  This notice may not be removed or altered from any source distribution.
  */
 
-/*
- * vim:ts=8:sw=3:sts=8:noexpandtab:cino=>5n-3f0^-2{2
- */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -396,7 +393,7 @@ embryo_program_native_call_add(Embryo_Program *ep, const char *name, Embryo_Cell
    Embryo_Header    *hdr;
    int               i, num;
 
-   if ((ep == NULL ) || (name == NULL) || (func == NULL)) return;
+   if ((!ep ) || (!name) || (!func)) return;
    if (strlen(name) > sNAMEMAX) return;
 
    hdr = (Embryo_Header *)ep->code;

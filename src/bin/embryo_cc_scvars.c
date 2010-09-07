@@ -20,12 +20,9 @@
  *      misrepresented as being the original software.
  *  3.  This notice may not be removed or altered from any source distribution.
  *
- *  Version: $Id: embryo_cc_scvars.c 47527 2010-03-28 08:36:55Z caro $
+ *  Version: $Id: embryo_cc_scvars.c 50816 2010-08-04 16:57:32Z lucas $
  */
 
-/*
- * vim:ts=8:sw=3:sts=8:noexpandtab:cino=>5n-3f0^-2{2
- */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>		/* for PATH_MAX */
