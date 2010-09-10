@@ -1,3 +1,11 @@
+embryo (1.0.0.001+svn.51480slp2+build01) unstable; urgency=low
+
+  * efl 1.0 alpha upgrade
+  * Git: 165.213.180.234:/git/slp/pkgs/embryo
+  * Tag: embryo_1.0.0.001+svn.51480slp2+build01
+
+ -- Jaehwan Kim <jae.hwan.kim@samsung.com>  Tue, 31 Aug 2010 22:47:22 +0900
+
 embryo (0.9.9.060+svn.49540slp2+3build04) unstable; urgency=low
 
   * Packaging.
