@@ -35,7 +35,7 @@
  *      misrepresented as being the original software.
  *  3.  This notice may not be removed or altered from any source distribution.
  *
- *  Version: $Id: embryo_cc_sc7.c 51023 2010-08-11 20:35:26Z lucas $
+ *  Version: $Id$
  */
 
 
@@ -533,7 +533,7 @@ replacesequence(char *pattern, char symbols[_maxoptvars][_aliasmax + 1],
     * that the same symbol may occur multiple times in the pattern) plus
     * line endings and startings ('\t' to start a line and '\n\0' to end one)
     */
-   assert(repl_length != NULL);
+   assert(!!repl_length);
    *repl_length = 0;
    lptr = pattern;
    while (*lptr)
@@ -627,7 +627,7 @@ stgopt(char *start, char *end)
    char                symbols[_maxoptvars][_aliasmax + 1];
    int                 seq, match_length, repl_length;
 
-   assert(sequences != NULL);
+   assert(!!sequences);
    while (start < end)
      {
 	if ((sc_debug & sNOOPTIMIZE) != 0 || sc_status != statWRITE)
@@ -677,7 +677,7 @@ stgopt(char *start, char *end)
 		       seq++;
 		    }		/* if */
 	       }		/* while */
-	     assert(sequences[seq].find == NULL);
+	     assert(!sequences[seq].find);
 	     filewrite(start);
 	  }			/* if */
 	assert(start < end);
