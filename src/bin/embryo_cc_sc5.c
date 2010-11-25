@@ -19,7 +19,7 @@
  *      misrepresented as being the original software.
  *  3.  This notice may not be removed or altered from any source distribution.
  *
- *  Version: $Id: embryo_cc_sc5.c 51023 2010-08-11 20:35:26Z lucas $
+ *  Version: $Id$
  */
 
 
@@ -49,9 +49,9 @@ static int errstart;	/* line number at which the instruction started */
  *  errors are ignored until lex() finds a semicolumn or a keyword
  *  (lex() resets "errflag" in that case).
  *
- *  Global references: inpfname   (reffered to only)
- *                     fline      (reffered to only)
- *                     fcurrent   (reffered to only)
+ *  Global references: inpfname   (referred to only)
+ *                     fline      (referred to only)
+ *                     fcurrent   (referred to only)
  *                     errflag    (altered)
  */
 int

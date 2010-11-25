@@ -206,12 +206,13 @@ _embryo_program_init(Embryo_Program *ep, void *code)
    ep->flags = EMBRYO_FLAG_RELOC;
 
      {
-	Embryo_Cell cip, code_size;
+	Embryo_Cell cip, code_size, cip_end;
 	Embryo_Cell *code;
 
 	code_size = hdr->dat - hdr->cod;
 	code = (Embryo_Cell *)((unsigned char *)ep->code + (int)hdr->cod);
-	for (cip = 0; cip < (code_size / sizeof(Embryo_Cell)); cip++)
+        cip_end = code_size / sizeof(Embryo_Cell);
+	for (cip = 0; cip < cip_end; cip++)
 	  {
 /* move this here - later we probably want something that verifies opcodes
  * are valid and ok...
@@ -547,7 +548,11 @@ embryo_program_vm_pop(Embryo_Program *ep)
  * @ingroup Embryo_Swap_Group
  */
 EAPI void
-embryo_swap_16(unsigned short *v)
+embryo_swap_16(unsigned short *v
+#ifndef WORDS_BIGENDIAN
+               __UNUSED__
+#endif               
+              )
 {
 #ifdef WORDS_BIGENDIAN
    _embryo_byte_swap_16(v);
@@ -561,7 +566,11 @@ embryo_swap_16(unsigned short *v)
  * @ingroup Embryo_Swap_Group
  */
 EAPI void
-embryo_swap_32(unsigned int *v)
+embryo_swap_32(unsigned int *v
+#ifndef WORDS_BIGENDIAN
+               __UNUSED__
+#endif
+               )
 {
 #ifdef WORDS_BIGENDIAN
    _embryo_byte_swap_32(v);
@@ -700,7 +709,7 @@ embryo_program_variable_get(Embryo_Program *ep, int num)
  * @ingroup Embryo_Error_Group
  */
 EAPI void
-embryo_program_error_set(Embryo_Program *ep, int error)
+embryo_program_error_set(Embryo_Program *ep, Embryo_Error error)
 {
    if (!ep) return;
    ep->error = error;
@@ -712,7 +721,7 @@ embryo_program_error_set(Embryo_Program *ep, int error)
  * @return  The current error code.
  * @ingroup Embryo_Error_Group
  */
-EAPI int
+EAPI Embryo_Error
 embryo_program_error_get(Embryo_Program *ep)
 {
    if (!ep) return EMBRYO_ERROR_NONE;
@@ -759,7 +768,7 @@ embryo_program_data_get(Embryo_Program *ep)
  * @ingroup Embryo_Error_Group
  */
 EAPI const char *
-embryo_error_string_get(int error)
+embryo_error_string_get(Embryo_Error error)
 {
    const char *messages[] =
      {
@@ -790,7 +799,8 @@ embryo_error_string_get(int error)
 	  /* EMBRYO_ERROR_INIT_JIT  */ "Cannot initialize the JIT",
 	  /* EMBRYO_ERROR_PARAMS    */ "Parameter error",
      };
-   if ((error < 0) || (error >= (int)(sizeof(messages) / sizeof(messages[0]))))
+   if (((int)error < 0) || 
+       ((int)error >= (int)(sizeof(messages) / sizeof(messages[0]))))
      return (const char *)"(unknown)";
    return messages[error];
 }
@@ -1041,7 +1051,7 @@ embryo_program_recursion_get(Embryo_Program *ep)
  *          it is allowed to in abstract machine instruction count.
  * @ingroup Embryo_Run_Group
  */
-EAPI int
+EAPI Embryo_Status
 embryo_program_run(Embryo_Program *ep, Embryo_Function fn)
 {
    Embryo_Header    *hdr;
@@ -2062,7 +2072,7 @@ embryo_program_run(Embryo_Program *ep, Embryo_Function fn)
 
 		       entry_name = GETENTRYNAME(hdr, func_entry);
 		       if (i == offs)
-			 printf("EMBRYO: CALL [%i] %s() non-existant!\n", i, entry_name);
+			 printf("EMBRYO: CALL [%i] %s() non-existent!\n", i, entry_name);
 		       func_entry =
 			 (Embryo_Func_Stub *)((unsigned char *)func_entry + hdr->defsize);
 		    }
@@ -2193,7 +2203,7 @@ embryo_program_return_value_get(Embryo_Program *ep)
  * run for a specific period of time. If the cycle count is set to something
  * low like 5000 or 1000, then every 1000 (or 5000) cycles control will be
  * returned to the calling process where it can check a timer to see if a
- * physical runtime limit has been elapsed and then abort runing further
+ * physical runtime limit has been elapsed and then abort running further
  * assuming a "runaway script" or keep continuing the script run. This
  * limits resolution to only that many cycles which do not take a determined
  * amount of time to execute, as this varies from cpu to cpu and also depends

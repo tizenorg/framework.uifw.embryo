@@ -44,8 +44,8 @@ extern "C" {
    
    EAPI extern Embryo_Version *embryo_version;
    
-   /* potentioal error values */
-   enum
+   /* potential error values */
+   typedef enum _Embryo_Error
      {
 	EMBRYO_ERROR_NONE,
 	  /* reserve the first 15 error codes for exit codes of the abstract machine */
@@ -73,25 +73,29 @@ extern "C" {
 	  EMBRYO_ERROR_INIT_JIT,     /** Cannot initialize the JIT */
 	  EMBRYO_ERROR_PARAMS,       /** Parameter error */
 	  EMBRYO_ERROR_DOMAIN,       /** Domain error, expression result does not fit in range */
-     };
+     } Embryo_Error;
 
-   /* possible function type values that are enumerated */
-#define EMBRYO_FUNCTION_NONE 0x7fffffff /* An invalid/non existant function */
-#define EMBRYO_FUNCTION_MAIN -1         /* Start at program entry point */
-#define EMBRYO_FUNCTION_CONT -2         /* Continue from last address */
-  /** An invalid cell reference */
-#define EMBRYO_CELL_NONE     0x7fffffff
    /* program run return values */
-#define EMBRYO_PROGRAM_OK      1
-#define EMBRYO_PROGRAM_SLEEP   2
-#define EMBRYO_PROGRAM_BUSY    3
-#define EMBRYO_PROGRAM_TOOLONG 4
-#define EMBRYO_PROGRAM_FAIL    0
-
+   typedef enum _Embryo_Status
+     {
+        EMBRYO_PROGRAM_FAIL = 0,
+        EMBRYO_PROGRAM_OK = 1,
+        EMBRYO_PROGRAM_SLEEP = 2,
+        EMBRYO_PROGRAM_BUSY = 3,
+        EMBRYO_PROGRAM_TOOLONG = 4
+     } Embryo_Status;
+   
    typedef unsigned int                Embryo_UCell;
    typedef int                         Embryo_Cell;
+  /** An invalid cell reference */
+#define EMBRYO_CELL_NONE     0x7fffffff
+   
    typedef struct _Embryo_Program      Embryo_Program;
    typedef int                         Embryo_Function;
+   /* possible function type values that are enumerated */
+#define EMBRYO_FUNCTION_NONE 0x7fffffff /* An invalid/non existent function */
+#define EMBRYO_FUNCTION_MAIN -1         /* Start at program entry point */
+#define EMBRYO_FUNCTION_CONT -2         /* Continue from last address */
 
    typedef union
      {
@@ -128,11 +132,11 @@ extern "C" {
    EAPI Embryo_Cell      embryo_program_variable_find(Embryo_Program *ep, const char *name);
    EAPI int              embryo_program_variable_count_get(Embryo_Program *ep);
    EAPI Embryo_Cell      embryo_program_variable_get(Embryo_Program *ep, int num);
-   EAPI void             embryo_program_error_set(Embryo_Program *ep, int error);
-   EAPI int              embryo_program_error_get(Embryo_Program *ep);
+   EAPI void             embryo_program_error_set(Embryo_Program *ep, Embryo_Error error);
+   EAPI Embryo_Error     embryo_program_error_get(Embryo_Program *ep);
    EAPI void             embryo_program_data_set(Embryo_Program *ep, void *data);
    EAPI void            *embryo_program_data_get(Embryo_Program *ep);
-   EAPI const char      *embryo_error_string_get(int error);
+   EAPI const char      *embryo_error_string_get(Embryo_Error error);
    EAPI int              embryo_data_string_length_get(Embryo_Program *ep, Embryo_Cell *str_cell);
    EAPI void             embryo_data_string_get(Embryo_Program *ep, Embryo_Cell *str_cell, char *dst);
    EAPI void             embryo_data_string_set(Embryo_Program *ep, const char *src, Embryo_Cell *str_cell);
@@ -140,7 +144,7 @@ extern "C" {
    EAPI Embryo_Cell      embryo_data_heap_push(Embryo_Program *ep, int cells);
    EAPI void             embryo_data_heap_pop(Embryo_Program *ep, Embryo_Cell down_to);
    EAPI int              embryo_program_recursion_get(Embryo_Program *ep);
-   EAPI int              embryo_program_run(Embryo_Program *ep, Embryo_Function func);
+   EAPI Embryo_Status    embryo_program_run(Embryo_Program *ep, Embryo_Function func);
    EAPI Embryo_Cell      embryo_program_return_value_get(Embryo_Program *ep);
    EAPI void             embryo_program_max_cycle_run_set(Embryo_Program *ep, int max);
    EAPI int              embryo_program_max_cycle_run_get(Embryo_Program *ep);

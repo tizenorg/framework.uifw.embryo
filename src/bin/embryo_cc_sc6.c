@@ -662,10 +662,10 @@ assemble(FILE * fout, FILE * fin)
 
 #if !defined NDEBUG
    /* verify that the opcode list is sorted (skip entry 1; it is reserved
-    * for a non-existant opcode)
+    * for a non-existent opcode)
     */
    assert(opcodelist[1].name != NULL);
-   for (i = 2; i < (sizeof opcodelist / sizeof opcodelist[0]); i++)
+   for (i = 2; i < (int)(sizeof(opcodelist) / sizeof(opcodelist[0])); i++)
      {
 	assert(opcodelist[i].name != NULL);
 	assert(strcasecmp(opcodelist[i].name, opcodelist[i - 1].name) > 0);
