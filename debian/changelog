@@ -1,3 +1,11 @@
+embryo (1.0.0.001+svn.58120slp2+build01) unstable; urgency=low
+
+  * [SVN EFL Migration] embryo in SLP is merged with SVN r58120
+  * Git: 165.213.180.234:slp/pkgs/e/embryo
+  * Tag: embryo_1.0.0.001+svn.58120slp2+build01
+
+ -- Jaehwan Kim <jae.hwan.kim@samsung.com>  Tue, 05 Apr 2011 15:55:13 +0900
+
 embryo (1.0.0.001+svn.57246slp2+build06) unstable; urgency=low
 
   * [SVN EFL Migration] embryo in SLP is merged with SVN r57246
