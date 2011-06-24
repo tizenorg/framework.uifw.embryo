@@ -5,7 +5,7 @@ Maintainer: Jaehwan Kim <jae.hwan.kim@samsung.com>, Juyung Seo <juyung.seo@samsu
 Original-Maintainer:  Debian Pkg-e Team <pkg-e-devel@lists.alioth.debian.org>
 Uploaders: Albin Tonnerre <albin.tonnerre@gmail.com>,
  Jan Lübbe <jluebbe@debian.org>, Xavier Oswald <x.oswald@free.fr>
-Build-Depends: dpkg-dev , debhelper (>= 6), cdbs, doxygen, pkg-config, libtool
+Build-Depends: dpkg-dev , debhelper (>= 6), cdbs, doxygen, pkg-config, libtool, libeina-dev
 Standards-Version: 3.8.1
 Homepage: http://www.enlightenment.org
 
