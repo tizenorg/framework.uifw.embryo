@@ -1,3 +1,9 @@
+embryo (1.0.0.001+svn.64802slp2+build01) unstable; urgency=low
+
+  * Merge with upstream @64802
+
+ -- Mike McCormack <mj.mccormack@samsung.com>  Thu, 10 Nov 2011 14:10:35 +0900
+
 embryo (1.0.0.001+svn.63811slp2+build01) unstable; urgency=low
 
   * Merge with upstream
