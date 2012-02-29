@@ -109,6 +109,19 @@ AC_SUBST(EFL_EMBRYO_BUILD)
 # For embryo_cc_prefix.c
 PKG_CHECK_MODULES([EINA], [eina >= 1.1.0])
 
+### Checks for portability layer
+
+PKG_CHECK_MODULES([EXOTIC],
+   [exotic],
+   [enable_exotic="yes"],
+   [enable_exotic="no"])
+
+if test "x${enable_exotic}" = "xyes"; then
+    requirement_embryo="exotic ${requirement_embryo}"
+
+    AC_DEFINE([HAVE_EXOTIC], [1], [Define to 1 if you have Exotic.])
+fi
+
 ### Checks for header files
 
 AC_CHECK_HEADERS([unistd.h])
@@ -167,7 +180,7 @@ case "$host_os" in
       AC_DEFINE(HAVE_GETTIMEOFDAY, 1, [Defined to 1 (MinGW platform)])
       ;;
    *)
-      AC_CHECK_FUNCS(gettimeofday)
+      EFL_CHECK_GETTIMEOFDAY([], [AC_MSG_ERROR([Cannot find gettimeofday()])])
       ;;
 esac
 
