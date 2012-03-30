@@ -3,8 +3,8 @@ Name:       embryo
 Summary:    A small virtual machine engine (in a library) and bytecode compiler
 Version:    1.1.0+svn.69490slp2+build01
 Release:    1
-Group:      TO_BE/FILLED_IN
-License:    TO BE FILLED IN
+Group:      System/Libraries
+License:    BSD
 URL:        http://www.enlightenment.org/
 Source0:    %{name}-%{version}.tar.gz
 Requires(post): /sbin/ldconfig
