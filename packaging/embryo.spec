@@ -1,7 +1,7 @@
 #sbs-git:slp/pkgs/e/embryo embryo 1.1.0+svn.68928slp2+build01 ff312ab0f1dd243c5f94e56b2e55f3c43b0cf40f
 Name:       embryo
 Summary:    A small virtual machine engine (in a library) and bytecode compiler
-Version:    1.1.0+svn.69490slp2+build01
+Version:    1.2.0+svn.69899slp2+build01
 Release:    1
 Group:      System/Libraries
 License:    BSD

@@ -1,3 +1,11 @@
+embryo (1.2.0+svn.69899slp2+build01) unstable; urgency=low
+
+  * Package Upload
+  * Git: slp/pkgs/e/embryo
+  * Tag: embryo_1.2.0+svn.69899slp2+build01
+
+ -- Jeonghyun Yun <jh0506.yun@samsung.com>  Fri, 06 Apr 2012 18:17:05 +0900
+
 embryo (1.1.0+svn.69490slp2+build01) unstable; urgency=low
 
   * Package Upload
