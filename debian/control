@@ -1,7 +1,7 @@
 Source: embryo
 Section: libs
 Priority: optional
-Maintainer: Jaehwan Kim <jae.hwan.kim@samsung.com>, Juyung Seo <juyung.seo@samsung.com>, Mike McCormack <mj.mccormack@samsung.com>, Jeonghyun Yun <jh0506.yun@samsung.com>
+Maintainer: Jaehwan Kim <jae.hwan.kim@samsung.com>, Juyung Seo <juyung.seo@samsung.com>, Mike McCormack <mj.mccormack@samsung.com>, Jeonghyun Yun <jh0506.yun@samsung.com>, Hyoyoung Chang <hyoyoung.chang@samsung.com>
 Build-Depends: dpkg-dev , debhelper (>= 6), cdbs, doxygen, pkg-config, libtool, libeina-dev
 Standards-Version: 3.8.1
 Homepage: http://www.enlightenment.org
