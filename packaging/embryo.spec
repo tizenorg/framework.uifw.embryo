@@ -1,9 +1,10 @@
+#sbs-git:slp/pkgs/e/embryo embryo 1.1.0+svn.68928slp2+build01 ff312ab0f1dd243c5f94e56b2e55f3c43b0cf40f
 Name:       embryo
 Summary:    A small virtual machine engine (in a library) and bytecode compiler
-Version:    1.1.0+svn.67705slp2
-Release:    1.1
-Group:      TO_BE/FILLED_IN
-License:    TO BE FILLED IN
+Version:    1.1.0+svn.69899slp2+build01
+Release:    1
+Group:      System/Libraries
+License:    BSD
 URL:        http://www.enlightenment.org/
 Source0:    %{name}-%{version}.tar.gz
 Requires(post): /sbin/ldconfig
@@ -36,6 +37,8 @@ A small virtual machine engine (in a library) and bytecode compile (devel)
 
 
 %build
+export CFLAGS+=" -fvisibility=hidden -fPIC"
+export LDFLAGS+=" -fvisibility=hidden -Wl,--hash-style=both -Wl,--as-needed"
 
 %autogen --disable-static
 %configure --disable-static
@@ -51,8 +54,8 @@ make %{?jobs:-j%jobs}
 %files
 %defattr(-,root,root,-)
 %{_libdir}/libembryo.so.*
-/usr/bin/embryo_cc
-/usr/share/embryo/include/default.inc
+%{_bindir}/embryo_cc
+%{_datadir}/embryo/include/default.inc
 
 
 %files devel
@@ -60,5 +63,3 @@ make %{?jobs:-j%jobs}
 %{_includedir}/embryo-1/Embryo.h
 %{_libdir}/libembryo.so
 %{_libdir}/pkgconfig/*.pc
-
-
