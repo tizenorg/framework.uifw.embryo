@@ -7,6 +7,7 @@ Group:      System/Libraries
 License:    BSD
 URL:        http://www.enlightenment.org/
 Source0:    %{name}-%{version}.tar.gz
+Source1001: packaging/embryo.manifest 
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 BuildRequires: pkgconfig(eina)
@@ -37,6 +38,7 @@ A small virtual machine engine (in a library) and bytecode compile (devel)
 
 
 %build
+cp %{SOURCE1001} .
 export CFLAGS+=" -fvisibility=hidden -fPIC"
 export LDFLAGS+=" -fvisibility=hidden -Wl,--hash-style=both -Wl,--as-needed"
 
@@ -52,6 +54,7 @@ make %{?jobs:-j%jobs}
 %postun -p /sbin/ldconfig
 
 %files
+%manifest embryo.manifest
 %defattr(-,root,root,-)
 %{_libdir}/libembryo.so.*
 %{_bindir}/embryo_cc
@@ -59,6 +62,7 @@ make %{?jobs:-j%jobs}
 
 
 %files devel
+%manifest embryo.manifest
 %defattr(-,root,root,-)
 %{_includedir}/embryo-1/Embryo.h
 %{_libdir}/libembryo.so
