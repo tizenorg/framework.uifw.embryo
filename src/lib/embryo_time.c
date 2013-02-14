@@ -1,14 +1,28 @@
-/*
- * vim:ts=8:sw=3:sts=8:noexpandtab:cino=>5n-3f0^-2{2
- */
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
-#include "embryo_private.h"
+#ifndef EFL_HAVE_GETTIMEOFDAY
+# error "Your platform isn't supported yet"
+#endif
+
 #include <sys/time.h>
 #include <time.h>
 
-#ifndef HAVE_GETTIMEOFDAY
-# error "Your platform isn't supported yet"
+#ifdef _MSC_VER
+# include <winsock2.h>
 #endif
+
+#ifdef HAVE_EVIL
+# include <Evil.h>
+#endif
+
+#ifdef HAVE_EXOTIC
+# include <Exotic.h>
+#endif
+
+#include "Embryo.h"
+#include "embryo_private.h"
 
 /* exported time api */
 
