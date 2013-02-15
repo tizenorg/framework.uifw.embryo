@@ -1,9 +1,44 @@
-/*
- * vim:ts=8:sw=3:sts=8:noexpandtab:cino=>5n-3f0^-2{2
- */
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
-#include "embryo_private.h"
+#ifdef STDC_HEADERS
+# include <stdlib.h>
+# include <stddef.h>
+#else
+# ifdef HAVE_STDLIB_H
+#  include <stdlib.h>
+# endif
+#endif
+#ifdef HAVE_ALLOCA_H
+# include <alloca.h>
+#elif !defined alloca
+# ifdef __GNUC__
+#  define alloca __builtin_alloca
+# elif defined _AIX
+#  define alloca __alloca
+# elif defined _MSC_VER
+#  include <malloc.h>
+#  define alloca _alloca
+# elif !defined HAVE_ALLOCA
+#  ifdef  __cplusplus
+extern "C"
+#  endif
+void *alloca (size_t);
+# endif
+#endif
+
+#ifdef HAVE_EXOTIC
+# include <Exotic.h>
+#endif
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <fnmatch.h>
+
+#include "Embryo.h"
+#include "embryo_private.h"
 
 #define STRGET(ep, str, par) { \
    Embryo_Cell *___cptr; \
@@ -254,7 +289,7 @@ _embryo_str_snprintf(Embryo_Program *ep, Embryo_Cell *params)
    /* params[2] = bufsize */
    /* params[3] = format_string */
    /* params[4] = first arg ... */
-   if (params[0] < (3 * sizeof(Embryo_Cell))) return 0;
+   if (params[0] < (Embryo_Cell)(3 * sizeof(Embryo_Cell))) return 0;
    if (params[2] <= 0) return 0;
    STRGET(ep, s1, params[3]);
    if (!s1) return -1;
@@ -403,7 +438,7 @@ _embryo_str_strstr(Embryo_Program *ep, Embryo_Cell *params)
    STRGET(ep, s2, params[2]);
    if ((!s1) || (!s2)) return -1;
    p = strstr(s1, s2);
-   if (p == NULL) return -1;
+   if (!p) return -1;
    return (Embryo_Cell)(p - s1);
 }
 
@@ -417,8 +452,9 @@ _embryo_str_strchr(Embryo_Program *ep, Embryo_Cell *params)
    if (params[0] != (2 * sizeof(Embryo_Cell))) return 0;
    STRGET(ep, s1, params[1]);
    STRGET(ep, s2, params[2]);
+   if ((!s1) || (!s2)) return -1;
    p = strchr(s1, s2[0]);
-   if (p == NULL) return -1;
+   if (!p) return -1;
    return (Embryo_Cell)(p - s1);
 }
 
@@ -432,8 +468,9 @@ _embryo_str_strrchr(Embryo_Program *ep, Embryo_Cell *params)
    if (params[0] != (2 * sizeof(Embryo_Cell))) return 0;
    STRGET(ep, s1, params[1]);
    STRGET(ep, s2, params[2]);
+   if ((!s1) || (!s2)) return -1;
    p = strrchr(s1, s2[0]);
-   if (p == NULL) return -1;
+   if (!p) return -1;
    return (Embryo_Cell)(p - s1);
 }
 

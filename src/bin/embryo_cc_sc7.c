@@ -38,9 +38,6 @@
  *  Version: $Id$
  */
 
-/*
- * vim:ts=8:sw=3:sts=8:noexpandtab:cino=>5n-3f0^-2{2
- */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -80,7 +77,7 @@ static void
 grow_stgbuffer(int requiredsize)
 {
    char               *p;
-   int                 clear = stgbuf == NULL;	/* if previously none, empty buffer explicitly */
+   int                 clear = !stgbuf;	/* if previously none, empty buffer explicitly */
 
    assert(stgmax < requiredsize);
    /* if the staging buffer (holding intermediate code for one line) grows
@@ -89,11 +86,11 @@ grow_stgbuffer(int requiredsize)
    if (requiredsize > sSTG_MAX)
       error(102, "staging buffer");	/* staging buffer overflow (fatal error) */
    stgmax = requiredsize + sSTG_GROW;
-   if (stgbuf != NULL)
+   if (stgbuf)
       p = (char *)realloc(stgbuf, stgmax * sizeof(char));
    else
       p = (char *)malloc(stgmax * sizeof(char));
-   if (p == NULL)
+   if (!p)
       error(102, "staging buffer");	/* staging buffer overflow (fatal error) */
    stgbuf = p;
    if (clear)
@@ -103,7 +100,7 @@ grow_stgbuffer(int requiredsize)
 void
 stgbuffer_cleanup(void)
 {
-   if (stgbuf != NULL)
+   if (stgbuf)
      {
 	free(stgbuf);
 	stgbuf = NULL;
@@ -238,7 +235,7 @@ typedef struct
  *  by '[', sENDREORDER by ']' and sEXPRSTART by '|' the following applies:
  *     '[]...'     valid, but useless; no output
  *     '[|...]     valid, but useless; only one string
- *     '[|...|...] valid and usefull
+ *     '[|...|...] valid and useful
  *     '[...|...]  invalid, first string doesn't start with '|'
  *     '[|...|]    invalid
  */
@@ -256,7 +253,7 @@ stgstring(char *start, char *end)
 	     start += 1;	/* skip token */
 	     /* allocate a argstack with sMAXARGS items */
 	     stack = (argstack *) malloc(sMAXARGS * sizeof(argstack));
-	     if (stack == NULL)
+	     if (!stack)
 		error(103);	/* insufficient memory */
 	     nest = 1;		/* nesting counter */
 	     argc = 0;		/* argument counter */
@@ -319,7 +316,7 @@ stgstring(char *start, char *end)
  *  Scraps code from the staging buffer by resetting "stgidx" to "index".
  *
  *  Global references: stgidx (altered)
- *                     staging (reffered to only)
+ *                     staging (referred to only)
  */
 void
 stgdel(int index, cell code_index)
@@ -384,11 +381,11 @@ phopt_init(void)
    char                str[160];
 
    /* count number of sequences */
-   for (number = 0; sequences_cmp[number].find != NULL; number++)
+   for (number = 0; sequences_cmp[number].find; number++)
       /* nothing */ ;
    number++;			/* include an item for the NULL terminator */
 
-   if ((sequences = (SEQUENCE *) malloc(number * sizeof(SEQUENCE))) == NULL)
+   if (!(sequences = (SEQUENCE *)malloc(number * sizeof(SEQUENCE))))
       return FALSE;
 
    /* pre-initialize all to NULL (in case of failure) */
@@ -405,21 +402,21 @@ phopt_init(void)
 	len =
 	   strexpand(str, (unsigned char *)sequences_cmp[i].find, sizeof str,
 		     SCPACK_TABLE);
-	assert(len <= sizeof str);
-	assert(len == (int)strlen(str) + 1);
+	assert(len <= (int)(sizeof(str)));
+	assert(len == (int)(strlen(str) + 1));
 	sequences[i].find = (char *)malloc(len);
-	if (sequences[i].find != NULL)
+	if (sequences[i].find)
 	   strcpy(sequences[i].find, str);
 	len =
 	   strexpand(str, (unsigned char *)sequences_cmp[i].replace, sizeof str,
 		     SCPACK_TABLE);
-	assert(len <= sizeof str);
-	assert(len == (int)strlen(str) + 1);
+	assert(len <= (int)(sizeof(str)));
+	assert(len == (int)(strlen(str) + 1));
 	sequences[i].replace = (char *)malloc(len);
-	if (sequences[i].replace != NULL)
+	if (sequences[i].replace)
 	   strcpy(sequences[i].replace, str);
 	sequences[i].savesize = sequences_cmp[i].savesize;
-	if (sequences[i].find == NULL || sequences[i].replace == NULL)
+	if (!sequences[i].find || !sequences[i].replace)
 	   return phopt_cleanup();
      }				/* for */
 
@@ -431,14 +428,14 @@ phopt_cleanup(void)
 {
    int                 i;
 
-   if (sequences != NULL)
+   if (sequences)
      {
 	i = 0;
-	while (sequences[i].find != NULL || sequences[i].replace != NULL)
+	while (sequences[i].find || sequences[i].replace)
 	  {
-	     if (sequences[i].find != NULL)
+	     if (sequences[i].find)
 		free(sequences[i].find);
-	     if (sequences[i].replace != NULL)
+	     if (sequences[i].replace)
 		free(sequences[i].replace);
 	     i++;
 	  }			/* while */
@@ -474,7 +471,7 @@ matchsequence(char *start, char *end, char *pattern,
 	  {
 	  case '%':		/* new "symbol" */
 	     pattern++;
-	     assert(isdigit(*pattern));
+	     assert(sc_isdigit(*pattern));
 	     var = atoi(pattern) - 1;
 	     assert(var >= 0 && var < _maxoptvars);
 	     assert(alphanum(*start));
@@ -545,7 +542,7 @@ replacesequence(char *pattern, char symbols[_maxoptvars][_aliasmax + 1],
 	  {
 	  case '%':
 	     lptr++;		/* skip '%' */
-	     assert(isdigit(*lptr));
+	     assert(sc_isdigit(*lptr));
 	     var = atoi(lptr) - 1;
 	     assert(var >= 0 && var < _maxoptvars);
 	     assert(symbols[var][0] != '\0');	/* variable should be defined */
@@ -561,7 +558,7 @@ replacesequence(char *pattern, char symbols[_maxoptvars][_aliasmax + 1],
      }				/* while */
 
    /* allocate a buffer to replace the sequence in */
-   if ((buffer = malloc(*repl_length)) == NULL)
+   if (!(buffer = malloc(*repl_length)))
      {
 	error(103);
 	return NULL;
@@ -578,7 +575,7 @@ replacesequence(char *pattern, char symbols[_maxoptvars][_aliasmax + 1],
 	  case '%':
 	     /* write out the symbol */
 	     pattern++;
-	     assert(isdigit(*pattern));
+	     assert(sc_isdigit(*pattern));
 	     var = atoi(pattern) - 1;
 	     assert(var >= 0 && var < _maxoptvars);
 	     assert(symbols[var][0] != '\0');	/* variable should be defined */
@@ -641,7 +638,7 @@ stgopt(char *start, char *end)
 	else
 	  {
 	     seq = 0;
-	     while (sequences[seq].find != NULL)
+	     while (sequences[seq].find)
 	       {
 		  assert(seq >= 0);
 		  if (matchsequence
