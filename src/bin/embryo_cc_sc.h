@@ -35,14 +35,15 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <setjmp.h>
-#include "embryo_cc_osdefs.h"
-#include "embryo_cc_amx.h"
 
-#if HAVE___ATTRIBUTE__
-#define __UNUSED__ __attribute__((unused))
+#ifndef _MSC_VER
+# include <stdint.h>
 #else
-#define __UNUSED__
+# include <stddef.h>
+# include <Evil.h>
 #endif
+
+#include "embryo_cc_amx.h"
 
 /* Note: the "cell" and "ucell" types are defined in AMX.H */
 
@@ -53,13 +54,13 @@
 
 #define sDIMEN_MAX     2	/* maximum number of array dimensions */
 #define sDEF_LITMAX  500	/* initial size of the literal pool, in "cells" */
-#define sLINEMAX     65535	/* input line length (in characters) */
+#define sLINEMAX (640 * 1024)	/* input line length (in characters) */
 #define sDEF_AMXSTACK 4096	/* default stack size for AMX files */
 #define sSTKMAX       80	/* stack for nested #includes and other uses */
 #define PREPROC_TERM  '\x7f'	/* termination character for preprocessor expressions (the "DEL" code) */
 #define sDEF_PREFIX   "default.inc"	/* default prefix filename */
 
-typedef void       *stkitem;	/* type of items stored on the stack */
+typedef intptr_t stkitem;	/* type of items stored on the stack */
 
 typedef struct __s_arginfo
 {				/* function argument info */
@@ -662,5 +663,11 @@ extern FILE      *inpf_org;	/* main source file */
 extern FILE      *outf;	/* file written to */
 
 extern jmp_buf    errbuf;	/* target of longjmp() on a fatal error */
+
+#define sc_isspace(x)  isspace ((int)((unsigned char)x))
+#define sc_isalpha(x)  isalpha ((int)((unsigned char)x))
+#define sc_isdigit(x)  isdigit ((int)((unsigned char)x))
+#define sc_isupper(x)  isupper ((int)((unsigned char)x))
+#define sc_isxdigit(x) isxdigit((int)((unsigned char)x))
 
 #endif

@@ -36,14 +36,21 @@
  *             Carsten Haitzler, <raster@rasterman.com>
  */
 
-/*
- * vim:ts=8:sw=3:sts=8:noexpandtab:cino=>5n-3f0^-2{2
- */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#include <stdlib.h>
 #include <math.h>
+
+#include "Embryo.h"
 #include "embryo_private.h"
 
-#define PI  3.1415926535897932384626433832795
+#define PI  3.1415926535897932384626433832795f
+#ifndef MAXFLOAT
+#define MAXFLOAT 3.40282347e+38f
+#endif
 
 /* internally useful calls */
 
@@ -53,9 +60,9 @@ _embryo_fp_degrees_to_radians(float angle, int radix)
    switch (radix)
      {
       case 1: /* degrees, sexagesimal system (technically: degrees/minutes/seconds) */
-	return (float)(angle * PI / 180.0);
+	return (angle * PI / 180.0f);
       case 2: /* grades, centesimal system */
-	return (float)(angle * PI / 200.0);
+	return (angle * PI / 200.0f);
       default: /* assume already radian */
 	break;
      }
@@ -87,7 +94,7 @@ _embryo_fp_str(Embryo_Program *ep, Embryo_Cell *params)
    if (params[0] != (1 * sizeof(Embryo_Cell))) return 0;
    str = embryo_data_address_get(ep, params[1]);
    len = embryo_data_string_length_get(ep, str);
-   if ((len == 0) || (len >= sizeof(buf))) return 0;
+   if ((len == 0) || (len >= (int)sizeof(buf))) return 0;
    embryo_data_string_get(ep, str, buf);
    f = (float)atof(buf);
    return EMBRYO_FLOAT_TO_CELL(f);
@@ -110,10 +117,21 @@ _embryo_fp_div(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
 {
    /* params[1] = float dividend (top) */
    /* params[2] = float divisor (bottom) */
-   float f;
+   float f, ff;
 
    if (params[0] != (2 * sizeof(Embryo_Cell))) return 0;
-   f = EMBRYO_CELL_TO_FLOAT(params[1]) / EMBRYO_CELL_TO_FLOAT(params[2]);
+   f = EMBRYO_CELL_TO_FLOAT(params[1]);
+   ff = EMBRYO_CELL_TO_FLOAT(params[2]);
+   if (ff == 0.0)
+     {
+        if (f == 0.0)
+          return EMBRYO_FLOAT_TO_CELL(0.0f);
+        else if (f < 0.0)
+          return EMBRYO_FLOAT_TO_CELL(-MAXFLOAT);
+        else
+          return EMBRYO_FLOAT_TO_CELL(MAXFLOAT);
+     }
+   f = f / ff;
    return EMBRYO_FLOAT_TO_CELL(f);
 }
 
@@ -150,7 +168,7 @@ _embryo_fp_fract(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
 
    if (params[0] != (1 * sizeof(Embryo_Cell))) return 0;
    f = EMBRYO_CELL_TO_FLOAT(params[1]);
-   f -= (float)(floor((double)f));
+   f -= (floorf(f));
    return EMBRYO_FLOAT_TO_CELL(f);
 }
 
@@ -167,17 +185,17 @@ _embryo_fp_round(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
    switch (params[2])
      {
       case 1: /* round downwards (truncate) */
-	f = (float)(floor((double)f));
+	f = (floorf(f));
 	break;
       case 2: /* round upwards */
-	f = (float)(ceil((double)f));
+	f = (ceilf(f));
 	break;
       case 3: /* round towards zero */
-	if (f >= 0.0) f = (float)(floor((double)f));
-	else          f = (float)(ceil((double)f));
+	if (f >= 0.0) f = (floorf(f));
+	else          f = (ceilf(f));
 	break;
       default: /* standard, round to nearest */
-	f = (float)(floor((double)f + 0.5));
+	f = (floorf(f + 0.5));
 	break;
      }
     return (Embryo_Cell)f;
@@ -206,7 +224,7 @@ _embryo_fp_sqroot(Embryo_Program *ep, Embryo_Cell *params)
 
    if (params[0] != (1 * sizeof(Embryo_Cell))) return 0;
    f = EMBRYO_CELL_TO_FLOAT(params[1]);
-   f = (float)sqrt(f);
+   f = sqrtf(f);
    if (f < 0)
      {
 	embryo_program_error_set(ep, EMBRYO_ERROR_DOMAIN);
@@ -225,7 +243,7 @@ _embryo_fp_power(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
    if (params[0] != (2 * sizeof(Embryo_Cell))) return 0;
    f = EMBRYO_CELL_TO_FLOAT(params[1]);
    ff = EMBRYO_CELL_TO_FLOAT(params[2]);
-   f = (float)pow(f, ff);
+   f = powf(f, ff);
    return EMBRYO_FLOAT_TO_CELL(f);
 }
 
@@ -234,7 +252,7 @@ _embryo_fp_log(Embryo_Program *ep, Embryo_Cell *params)
 {
    /* params[1] = float operand 1 (value) */
    /* params[2] = float operand 2 (base) */
-   float f, ff;
+   float f, ff, tf;
 
    if (params[0] != (2 * sizeof(Embryo_Cell))) return 0;
    f = EMBRYO_CELL_TO_FLOAT(params[1]);
@@ -244,8 +262,14 @@ _embryo_fp_log(Embryo_Program *ep, Embryo_Cell *params)
 	embryo_program_error_set(ep, EMBRYO_ERROR_DOMAIN);
 	return 0;
      }
-    if (ff == 10.0) f = (float)log10(f);
-    else f = (float)(log(f) / log(ff));
+    if (ff == 10.0) f = log10f(f);
+    else if (ff == 2.0) f = log2f(f);
+    else
+     {
+        tf = logf(ff);
+        if (tf == 0.0) f = 0.0;
+        else f = (logf(f) / tf);
+     }
     return EMBRYO_FLOAT_TO_CELL(f);
 }
 
@@ -259,7 +283,7 @@ _embryo_fp_sin(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
    if (params[0] != (2 * sizeof(Embryo_Cell))) return 0;
    f = EMBRYO_CELL_TO_FLOAT(params[1]);
    f = _embryo_fp_degrees_to_radians(f, params[2]);
-   f = sin(f);
+   f = sinf(f);
    return EMBRYO_FLOAT_TO_CELL(f);
 }
 
@@ -273,7 +297,7 @@ _embryo_fp_cos(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
    if (params[0] != (2 * sizeof(Embryo_Cell))) return 0;
    f = EMBRYO_CELL_TO_FLOAT(params[1]);
    f = _embryo_fp_degrees_to_radians(f, params[2]);
-   f = cos(f);
+   f = cosf(f);
    return EMBRYO_FLOAT_TO_CELL(f);
 }
 
@@ -287,7 +311,7 @@ _embryo_fp_tan(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
    if (params[0] != (2 * sizeof(Embryo_Cell))) return 0;
    f = EMBRYO_CELL_TO_FLOAT(params[1]);
    f = _embryo_fp_degrees_to_radians(f, params[2]);
-   f = tan(f);
+   f = tanf(f);
    return EMBRYO_FLOAT_TO_CELL(f);
 }
 
@@ -300,6 +324,125 @@ _embryo_fp_abs(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
    if (params[0] != (1 * sizeof(Embryo_Cell))) return 0;
    f = EMBRYO_CELL_TO_FLOAT(params[1]);
    f = (f >= 0) ? f : -f;
+   return EMBRYO_FLOAT_TO_CELL(f);
+}
+
+static Embryo_Cell
+_embryo_fp_asin(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
+{
+   /* params[1] = float operand 1 (angle) */
+   /* params[2] = float operand 2 (radix) */
+   float f;
+
+   if (params[0] != (2 * sizeof(Embryo_Cell))) return 0;
+   f = EMBRYO_CELL_TO_FLOAT(params[1]);
+   f = sinf(f);
+   f = _embryo_fp_degrees_to_radians(f, params[2]);
+   return EMBRYO_FLOAT_TO_CELL(f);
+}
+
+static Embryo_Cell
+_embryo_fp_acos(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
+{
+   /* params[1] = float operand 1 (angle) */
+   /* params[2] = float operand 2 (radix) */
+   float f;
+
+   if (params[0] != (2 * sizeof(Embryo_Cell))) return 0;
+   f = EMBRYO_CELL_TO_FLOAT(params[1]);
+   f = cosf(f);
+   f = _embryo_fp_degrees_to_radians(f, params[2]);
+   return EMBRYO_FLOAT_TO_CELL(f);
+}
+
+static Embryo_Cell
+_embryo_fp_atan(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
+{
+   /* params[1] = float operand 1 (angle) */
+   /* params[2] = float operand 2 (radix) */
+   float f;
+
+   if (params[0] != (2 * sizeof(Embryo_Cell))) return 0;
+   f = EMBRYO_CELL_TO_FLOAT(params[1]);
+   f = tanf(f);
+   f = _embryo_fp_degrees_to_radians(f, params[2]);
+   return EMBRYO_FLOAT_TO_CELL(f);
+}
+
+static Embryo_Cell
+_embryo_fp_atan2(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
+{
+   /* params[1] = float operand 1 (y) */
+   /* params[2] = float operand 2 (x) */
+   /* params[3] = float operand 3 (radix) */
+   float f, ff;
+
+   if (params[0] != (3 * sizeof(Embryo_Cell))) return 0;
+   f = EMBRYO_CELL_TO_FLOAT(params[1]);
+   ff = EMBRYO_CELL_TO_FLOAT(params[2]);
+   f = atan2f(f, ff);
+   f = _embryo_fp_degrees_to_radians(f, params[3]);
+   return EMBRYO_FLOAT_TO_CELL(f);
+}
+
+static Embryo_Cell
+_embryo_fp_log1p(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
+{
+   /* params[1] = float operand */
+   float f;
+
+   if (params[0] != (1 * sizeof(Embryo_Cell))) return 0;
+   f = EMBRYO_CELL_TO_FLOAT(params[1]);
+   f = log1pf(f);
+   return EMBRYO_FLOAT_TO_CELL(f);
+}
+
+static Embryo_Cell
+_embryo_fp_cbrt(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
+{
+   /* params[1] = float operand */
+   float f;
+
+   if (params[0] != (1 * sizeof(Embryo_Cell))) return 0;
+   f = EMBRYO_CELL_TO_FLOAT(params[1]);
+   f = cbrtf(f);
+   return EMBRYO_FLOAT_TO_CELL(f);
+}
+
+static Embryo_Cell
+_embryo_fp_exp(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
+{
+   /* params[1] = float operand */
+   float f;
+
+   if (params[0] != (1 * sizeof(Embryo_Cell))) return 0;
+   f = EMBRYO_CELL_TO_FLOAT(params[1]);
+   f = expf(f);
+   return EMBRYO_FLOAT_TO_CELL(f);
+}
+
+static Embryo_Cell
+_embryo_fp_exp2(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
+{
+   /* params[1] = float operand */
+   float f;
+
+   if (params[0] != (1 * sizeof(Embryo_Cell))) return 0;
+   f = EMBRYO_CELL_TO_FLOAT(params[1]);
+   f = exp2f(f);
+   return EMBRYO_FLOAT_TO_CELL(f);
+}
+
+static Embryo_Cell
+_embryo_fp_hypot(Embryo_Program *ep __UNUSED__, Embryo_Cell *params)
+{
+   /* params[1] = float operand */
+   float f, ff;
+
+   if (params[0] != (2 * sizeof(Embryo_Cell))) return 0;
+   f = EMBRYO_CELL_TO_FLOAT(params[1]);
+   ff = EMBRYO_CELL_TO_FLOAT(params[2]);
+   f = hypotf(f, ff);
    return EMBRYO_FLOAT_TO_CELL(f);
 }
 
@@ -324,4 +467,14 @@ _embryo_fp_init(Embryo_Program *ep)
    embryo_program_native_call_add(ep, "cos",       _embryo_fp_cos);
    embryo_program_native_call_add(ep, "tan",       _embryo_fp_tan);
    embryo_program_native_call_add(ep, "abs",       _embryo_fp_abs);
+   /* Added in embryo 1.2 */
+   embryo_program_native_call_add(ep, "asin",      _embryo_fp_asin);
+   embryo_program_native_call_add(ep, "acos",      _embryo_fp_acos);
+   embryo_program_native_call_add(ep, "atan",      _embryo_fp_atan);
+   embryo_program_native_call_add(ep, "atan2",     _embryo_fp_atan2);
+   embryo_program_native_call_add(ep, "log1p",     _embryo_fp_log1p);
+   embryo_program_native_call_add(ep, "cbrt",      _embryo_fp_cbrt);
+   embryo_program_native_call_add(ep, "exp",       _embryo_fp_exp);
+   embryo_program_native_call_add(ep, "exp2",      _embryo_fp_exp2);
+   embryo_program_native_call_add(ep, "hypot",     _embryo_fp_hypot);
 }

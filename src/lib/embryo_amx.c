@@ -1,7 +1,7 @@
 /*  Abstract Machine for the Small compiler
  *
  *  Copyright (c) ITB CompuPhase, 1997-2003
- *  Portions Copyright (c) Carsten Haitzler, 2004 <raster@rasterman.com>
+ *  Portions Copyright (c) Carsten Haitzler, 2004-2010 <raster@rasterman.com>
  *
  *  This software is provided "as-is", without any express or implied warranty.
  *  In no event will the authors be held liable for any damages arising from
@@ -20,11 +20,22 @@
  *  3.  This notice may not be removed or altered from any source distribution.
  */
 
-/*
- * vim:ts=8:sw=3:sts=8:noexpandtab:cino=>5n-3f0^-2{2
- */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+#ifdef HAVE_EXOTIC
+# include <Exotic.h>
+#endif
+
+#include "Embryo.h"
 #include "embryo_private.h"
+
 
 #define JUMPABS(base, ip)     ((Embryo_Cell *)(code + (*ip)))
 
@@ -32,9 +43,9 @@
 static void _embryo_byte_swap_16 (unsigned short *v);
 static void _embryo_byte_swap_32 (unsigned int *v);
 #endif
-static int  _embryo_native_call  (Embryo_Program *ep, Embryo_Cell index, Embryo_Cell *result, Embryo_Cell *params);
-static int  _embryo_func_get     (Embryo_Program *ep, int index, char *funcname);
-static int  _embryo_var_get      (Embryo_Program *ep, int index, char *varname, Embryo_Cell *ep_addr);
+static int  _embryo_native_call  (Embryo_Program *ep, Embryo_Cell idx, Embryo_Cell *result, Embryo_Cell *params);
+static int  _embryo_func_get     (Embryo_Program *ep, int idx, char *funcname);
+static int  _embryo_var_get      (Embryo_Program *ep, int idx, char *varname, Embryo_Cell *ep_addr);
 static int  _embryo_program_init (Embryo_Program *ep, void *code);
 
 #ifdef WORDS_BIGENDIAN
@@ -59,14 +70,14 @@ _embryo_byte_swap_32(unsigned int *v)
 #endif
 
 static int
-_embryo_native_call(Embryo_Program *ep, Embryo_Cell index, Embryo_Cell *result, Embryo_Cell *params)
+_embryo_native_call(Embryo_Program *ep, Embryo_Cell idx, Embryo_Cell *result, Embryo_Cell *params)
 {
    Embryo_Header    *hdr;
    Embryo_Func_Stub *func_entry;
    Embryo_Native     f;
 
    hdr = (Embryo_Header *)ep->base;
-   func_entry = GETENTRY(hdr, natives, index);
+   func_entry = GETENTRY(hdr, natives, idx);
    if ((func_entry->address <= 0) ||
        (func_entry->address > ep->native_calls_size))
      {
@@ -85,32 +96,32 @@ _embryo_native_call(Embryo_Program *ep, Embryo_Cell index, Embryo_Cell *result, 
 }
 
 static int
-_embryo_func_get(Embryo_Program *ep, int index, char *funcname)
+_embryo_func_get(Embryo_Program *ep, int idx, char *funcname)
 {
    Embryo_Header    *hdr;
    Embryo_Func_Stub *func;
 
    hdr = (Embryo_Header *)ep->code;
-   if (index >= (Embryo_Cell)NUMENTRIES(hdr, publics, natives))
+   if (idx >= (Embryo_Cell)NUMENTRIES(hdr, publics, natives))
      return EMBRYO_ERROR_INDEX;
 
-   func = GETENTRY(hdr, publics, index);
+   func = GETENTRY(hdr, publics, idx);
    strcpy(funcname, GETENTRYNAME(hdr, func));
    return EMBRYO_ERROR_NONE;
 }
 
 static int
-_embryo_var_get(Embryo_Program *ep, int index, char *varname, Embryo_Cell *ep_addr)
+_embryo_var_get(Embryo_Program *ep, int idx, char *varname, Embryo_Cell *ep_addr)
 {
 
   Embryo_Header    *hdr;
   Embryo_Func_Stub *var;
 
   hdr=(Embryo_Header *)ep->base;
-  if (index >= (Embryo_Cell)NUMENTRIES(hdr, pubvars, tags))
+  if (idx >= (Embryo_Cell)NUMENTRIES(hdr, pubvars, tags))
      return EMBRYO_ERROR_INDEX;
 
-  var = GETENTRY(hdr, pubvars, index);
+  var = GETENTRY(hdr, pubvars, idx);
   strcpy(varname, GETENTRYNAME(hdr, var));
   *ep_addr = var->address;
   return EMBRYO_ERROR_NONE;
@@ -195,12 +206,13 @@ _embryo_program_init(Embryo_Program *ep, void *code)
    ep->flags = EMBRYO_FLAG_RELOC;
 
      {
-	Embryo_Cell cip, code_size;
+	Embryo_Cell cip, code_size, cip_end;
 	Embryo_Cell *code;
 
 	code_size = hdr->dat - hdr->cod;
 	code = (Embryo_Cell *)((unsigned char *)ep->code + (int)hdr->cod);
-	for (cip = 0; cip < (code_size / sizeof(Embryo_Cell)); cip++)
+        cip_end = code_size / sizeof(Embryo_Cell);
+	for (cip = 0; cip < cip_end; cip++)
 	  {
 /* move this here - later we probably want something that verifies opcodes
  * are valid and ok...
@@ -222,19 +234,6 @@ _embryo_program_init(Embryo_Program *ep, void *code)
 
 /*** EXPORTED CALLS ***/
 
-/**
- * @defgroup Embryo_Program_Creation_Group Program Creation and Destruction Functions
- *
- * Functions that set up programs, and destroy them.
- */
-
-/**
- * Creates a new Embryo program, with bytecode data that can be freed.
- * @param   data Pointer to the bytecode of the program.
- * @param   size Number of bytes of bytecode.
- * @return  A new Embryo program.
- * @ingroup Embryo_Program_Creation_Group
- */
 EAPI Embryo_Program *
 embryo_program_new(void *data, int size)
 {
@@ -259,14 +258,6 @@ embryo_program_new(void *data, int size)
    return NULL;
 }
 
-/**
- * Creates a new Embryo program, with bytecode data that cannot be
- * freed.
- * @param   data Pointer to the bytecode of the program.
- * @param   size Number of bytes of bytecode.
- * @return  A new Embryo program.
- * @ingroup Embryo_Program_Creation_Group
- */
 EAPI Embryo_Program *
 embryo_program_const_new(void *data, int size)
 {
@@ -286,15 +277,8 @@ embryo_program_const_new(void *data, int size)
    return NULL;
 }
 
-/**
- * Creates a new Embryo program based on the bytecode data stored in the
- * given file.
- * @param   file Filename of the given file.
- * @return  A new Embryo program.
- * @ingroup Embryo_Program_Creation_Group
- */
 EAPI Embryo_Program *
-embryo_program_load(char *file)
+embryo_program_load(const char *file)
 {
    Embryo_Program *ep;
    Embryo_Header   hdr;
@@ -306,7 +290,7 @@ embryo_program_load(char *file)
    if (!f) return NULL;
    fseek(f, 0, SEEK_END);
    program_size = ftell(f);
-   rewind(f);
+   fseek(f, 0L, SEEK_SET);
    if (program_size < (int)sizeof(Embryo_Header))
      {
 	fclose(f);
@@ -317,7 +301,7 @@ embryo_program_load(char *file)
 	fclose(f);
 	return NULL;
      }
-   rewind(f);
+   fseek(f, 0L, SEEK_SET);
 #ifdef WORDS_BIGENDIAN
    embryo_swap_32((unsigned int *)(&hdr.size));
 #endif
@@ -340,11 +324,6 @@ embryo_program_load(char *file)
    return ep;
 }
 
-/**
- * Frees the given Embryo program.
- * @param   ep The given program.
- * @ingroup Embryo_Program_Creation_Group
- */
 EAPI void
 embryo_program_free(Embryo_Program *ep)
 {
@@ -362,19 +341,7 @@ embryo_program_free(Embryo_Program *ep)
    free(ep);
 }
 
-/**
- * @defgroup Embryo_Func_Group Function Functions
- *
- * Functions that deal with Embryo program functions.
- */
 
-/**
- * Adds a native program call to the given Embryo program.
- * @param   ep   The given Embryo program.
- * @param   name The name for the call used in the script.
- * @param   func The function to use when the call is made.
- * @ingroup Embryo_Func_Group
- */
 EAPI void
 embryo_program_native_call_add(Embryo_Program *ep, const char *name, Embryo_Cell (*func) (Embryo_Program *ep, Embryo_Cell *params))
 {
@@ -382,7 +349,7 @@ embryo_program_native_call_add(Embryo_Program *ep, const char *name, Embryo_Cell
    Embryo_Header    *hdr;
    int               i, num;
 
-   if ((ep == NULL ) || (name == NULL) || (func == NULL)) return;
+   if ((!ep ) || (!name) || (!func)) return;
    if (strlen(name) > sNAMEMAX) return;
 
    hdr = (Embryo_Header *)ep->code;
@@ -395,13 +362,13 @@ embryo_program_native_call_add(Embryo_Program *ep, const char *name, Embryo_Cell
      {
 	Embryo_Native *calls;
 
-	ep->native_calls_alloc += 16;
+	ep->native_calls_alloc += 32;
 	calls = realloc(ep->native_calls,
 			ep->native_calls_alloc * sizeof(Embryo_Native));
 	if (!calls)
 	  {
 	     ep->native_calls_size--;
-	     ep->native_calls_alloc -= 16;
+	     ep->native_calls_alloc -= 32;
 	     return;
 	  }
 	ep->native_calls = calls;
@@ -430,30 +397,7 @@ embryo_program_native_call_add(Embryo_Program *ep, const char *name, Embryo_Cell
      }
 }
 
-/**
- * @defgroup Embryo_Program_VM_Group Virtual Machine Functions
- *
- * Functions that deal with creating and destroying virtual machine sessions
- * for a given program.
- *
- * A given embryo program can have multiple virtual machine sessions running.
- * This is useful when you have a native call that in turn calls a function in
- * the embryo program.  The native call can start a new virtual machine
- * session to run the function it needs.  Once completed, the session can be
- * popped off the program's stack, and the native call can return its value
- * to the old session.
- *
- * A new virtual machine session is created by pushing a new virtual machine
- * onto the session stack of a program using @ref embryo_program_vm_push.
- * The current virtual machine session can be destroyed by calling
- * @ref embryo_program_vm_pop.
- */
 
-/**
- * Resets the current virtual machine session of the given program.
- * @param   ep The given program.
- * @ingroup Embryo_Program_VM_Group
- */
 EAPI void
 embryo_program_vm_reset(Embryo_Program *ep)
 {
@@ -470,14 +414,6 @@ embryo_program_vm_reset(Embryo_Program *ep)
    ep->stk = ep->stp;
 }
 
-/**
- * Starts a new virtual machine session for the given program.
- *
- * See @ref Embryo_Program_VM_Group for more information about how this works.
- *
- * @param   ep The given program.
- * @ingroup Embryo_Program_VM_Group
- */
 EAPI void
 embryo_program_vm_push(Embryo_Program *ep)
 {
@@ -491,7 +427,7 @@ embryo_program_vm_push(Embryo_Program *ep)
 	return;
      }
    hdr = (Embryo_Header *)ep->code;
-   ep->base = malloc(hdr->stp);
+   ep->base = calloc(1, hdr->stp);
    if (!ep->base)
      {
 	ep->pushes = 0;
@@ -500,16 +436,6 @@ embryo_program_vm_push(Embryo_Program *ep)
    embryo_program_vm_reset(ep);
 }
 
-/**
- * Frees the current virtual machine session associated with the given program.
- *
- * See @ref Embryo_Program_VM_Group for more information about how this works.
- * Note that you will need to retrieve any return data or data on the stack
- * before you pop.
- *
- * @param   ep The given program.
- * @ingroup Embryo_Program_VM_Group
- */
 EAPI void
 embryo_program_vm_pop(Embryo_Program *ep)
 {
@@ -520,50 +446,31 @@ embryo_program_vm_pop(Embryo_Program *ep)
    ep->base = NULL;
 }
 
-/**
- * @defgroup Embryo_Swap_Group Byte Swapping Functions
- *
- * Functions that are used to ensure that integers passed to the
- * virtual machine are in small endian format.  These functions are
- * used to ensure that the virtual machine operates correctly on big
- * endian machines.
- */
 
-/**
- * Ensures that the given unsigned short integer is in the small
- * endian format.
- * @param   v Pointer to the given integer.
- * @ingroup Embryo_Swap_Group
- */
 EAPI void
-embryo_swap_16(unsigned short *v)
+embryo_swap_16(unsigned short *v
+#ifndef WORDS_BIGENDIAN
+               __UNUSED__
+#endif               
+              )
 {
 #ifdef WORDS_BIGENDIAN
    _embryo_byte_swap_16(v);
 #endif
 }
 
-/**
- * Ensures that the given unsigned integer is in the small endian
- * format.
- * @param   v Pointer to the given integer.
- * @ingroup Embryo_Swap_Group
- */
 EAPI void
-embryo_swap_32(unsigned int *v)
+embryo_swap_32(unsigned int *v
+#ifndef WORDS_BIGENDIAN
+               __UNUSED__
+#endif
+               )
 {
 #ifdef WORDS_BIGENDIAN
    _embryo_byte_swap_32(v);
 #endif
 }
 
-/**
- * Returns the function in the given program with the given name.
- * @param   ep The given program.
- * @param   name The given function name.
- * @return  The function if successful.  Otherwise, @c EMBRYO_FUNCTION_NONE.
- * @ingroup Embryo_Func_Group
- */
 EAPI Embryo_Function
 embryo_program_function_find(Embryo_Program *ep, const char *name)
 {
@@ -591,23 +498,7 @@ embryo_program_function_find(Embryo_Program *ep, const char *name)
    return EMBRYO_FUNCTION_NONE;
 }
 
-/**
- * @defgroup Embryo_Public_Variable_Group Public Variable Access Functions
- *
- * In an Embryo program, a global variable can be declared public, as
- * described in @ref Small_Scope_Subsection.  The functions here allow
- * the host program to access these public variables.
- */
 
-/**
- * Retrieves the location of the public variable in the given program
- * with the given name.
- * @param   ep   The given program.
- * @param   name The given name.
- * @return  The address of the variable if found.  @c EMBRYO_CELL_NONE
- *          otherwise.
- * @ingroup Embryo_Public_Variable_Group
- */
 EAPI Embryo_Cell
 embryo_program_variable_find(Embryo_Program *ep, const char *name)
 {
@@ -637,12 +528,6 @@ embryo_program_variable_find(Embryo_Program *ep, const char *name)
    return EMBRYO_CELL_NONE;
 }
 
-/**
- * Retrieves the number of public variables in the given program.
- * @param   ep The given program.
- * @return  The number of public variables.
- * @ingroup Embryo_Public_Variable_Group
- */
 EAPI int
 embryo_program_variable_count_get(Embryo_Program *ep)
 {
@@ -654,75 +539,35 @@ embryo_program_variable_count_get(Embryo_Program *ep)
    return NUMENTRIES(hdr, pubvars, tags);
 }
 
-/**
- * Retrieves the location of the public variable in the given program
- * with the given identifier.
- * @param   ep  The given program.
- * @param   num The identifier of the public variable.
- * @return  The virtual machine address of the variable if found.
- *          @c EMBRYO_CELL_NONE otherwise.
- * @ingroup Embryo_Public_Variable_Group
- */
 EAPI Embryo_Cell
 embryo_program_variable_get(Embryo_Program *ep, int num)
 {
-   Embryo_Header *hdr;
    Embryo_Cell    paddr;
    char           pname[sNAMEMAX + 1];
 
    if (!ep) return EMBRYO_CELL_NONE;
    if (!ep->base) return EMBRYO_CELL_NONE;
-   hdr = (Embryo_Header *)ep->base;
    if (_embryo_var_get(ep, num, pname, &paddr) == EMBRYO_ERROR_NONE)
      return paddr;
    return EMBRYO_CELL_NONE;
 }
 
-/**
- * @defgroup Embryo_Error_Group Error Functions
- *
- * Functions that set and retrieve error codes in Embryo programs.
- */
 
-/**
- * Sets the error code for the given program to the given code.
- * @param   ep The given program.
- * @param   error The given error code.
- * @ingroup Embryo_Error_Group
- */
 EAPI void
-embryo_program_error_set(Embryo_Program *ep, int error)
+embryo_program_error_set(Embryo_Program *ep, Embryo_Error error)
 {
    if (!ep) return;
    ep->error = error;
 }
 
-/**
- * Retrieves the current error code for the given program.
- * @param   ep The given program.
- * @return  The current error code.
- * @ingroup Embryo_Error_Group
- */
-EAPI int
+EAPI Embryo_Error
 embryo_program_error_get(Embryo_Program *ep)
 {
    if (!ep) return EMBRYO_ERROR_NONE;
    return ep->error;
 }
 
-/**
- * @defgroup Embryo_Program_Data_Group Program Data Functions
- *
- * Functions that set and retrieve data associated with the given
- * program.
- */
 
-/**
- * Sets the data associated to the given program.
- * @param   ep   The given program.
- * @param   data New bytecode data.
- * @ingroup Embryo_Program_Data_Group
- */
 EAPI void
 embryo_program_data_set(Embryo_Program *ep, void *data)
 {
@@ -730,11 +575,6 @@ embryo_program_data_set(Embryo_Program *ep, void *data)
    ep->data = data;
 }
 
-/**
- * Retrieves the data associated to the given program.
- * @param   ep The given program.
- * @ingroup Embryo_Program_Data_Group
- */
 EAPI void *
 embryo_program_data_get(Embryo_Program *ep)
 {
@@ -742,15 +582,8 @@ embryo_program_data_get(Embryo_Program *ep)
    return ep->data;
 }
 
-/**
- * Retrieves a string describing the given error code.
- * @param   error The given error code.
- * @return  String describing the given error code.  If the given code is not
- *          known, the string "(unknown)" is returned.
- * @ingroup Embryo_Error_Group
- */
 EAPI const char *
-embryo_error_string_get(int error)
+embryo_error_string_get(Embryo_Error error)
 {
    const char *messages[] =
      {
@@ -781,24 +614,13 @@ embryo_error_string_get(int error)
 	  /* EMBRYO_ERROR_INIT_JIT  */ "Cannot initialize the JIT",
 	  /* EMBRYO_ERROR_PARAMS    */ "Parameter error",
      };
-   if ((error < 0) || (error >= (int)(sizeof(messages) / sizeof(messages[0]))))
+   if (((int)error < 0) || 
+       ((int)error >= (int)(sizeof(messages) / sizeof(messages[0]))))
      return (const char *)"(unknown)";
    return messages[error];
 }
 
-/**
- * @defgroup Embryo_Data_String_Group Embryo Data String Functions
- *
- * Functions that operate on strings in the memory of a virtual machine.
- */
 
-/**
- * Retrieves the length of the string starting at the given cell.
- * @param   ep       The program the cell is part of.
- * @param   str_cell Pointer to the first cell of the string.
- * @return  The length of the string.  @c 0 is returned if there is an error.
- * @ingroup Embryo_Data_String_Group
- */
 EAPI int
 embryo_data_string_length_get(Embryo_Program *ep, Embryo_Cell *str_cell)
 {
@@ -815,13 +637,6 @@ embryo_data_string_length_get(Embryo_Program *ep, Embryo_Cell *str_cell)
    return len;
 }
 
-/**
- * Copies the string starting at the given cell to the given buffer.
- * @param   ep       The program the cell is part of.
- * @param   str_cell Pointer to the first cell of the string.
- * @param   dst      The given buffer.
- * @ingroup Embryo_Data_String_Group
- */
 EAPI void
 embryo_data_string_get(Embryo_Program *ep, Embryo_Cell *str_cell, char *dst)
 {
@@ -859,14 +674,6 @@ embryo_data_string_get(Embryo_Program *ep, Embryo_Cell *str_cell, char *dst)
    dst[i] = 0;
 }
 
-/**
- * Copies string in the given buffer into the virtual machine memory
- * starting at the given cell.
- * @param ep       The program the cell is part of.
- * @param src      The given buffer.
- * @param str_cell Pointer to the first cell to copy the string to.
- * @ingroup Embryo_Data_String_Group
- */
 EAPI void
 embryo_data_string_set(Embryo_Program *ep, const char *src, Embryo_Cell *str_cell)
 {
@@ -908,14 +715,6 @@ embryo_data_string_set(Embryo_Program *ep, const char *src, Embryo_Cell *str_cel
    str_cell[i] = 0;
 }
 
-/**
- * Retreives a pointer to the address in the virtual machine given by the
- * given cell.
- * @param   ep   The program whose virtual machine address is being queried.
- * @param   addr The given cell.
- * @return  A pointer to the cell at the given address.
- * @ingroup Embryo_Data_String_Group
- */
 EAPI Embryo_Cell *
 embryo_data_address_get(Embryo_Program *ep, Embryo_Cell addr)
 {
@@ -929,33 +728,15 @@ embryo_data_address_get(Embryo_Program *ep, Embryo_Cell addr)
    return (Embryo_Cell *)(data + (int)addr);
 }
 
-/**
- * @defgroup Embryo_Heap_Group Heap Functions
- *
- * The heap is an area of memory that can be allocated for program
- * use at runtime.  The heap functions here change the amount of heap
- * memory available.
- */
 
-/**
- * Increases the size of the heap of the given virtual machine by the given
- * number of Embryo_Cells.
- * @param   ep    The program with the given virtual machine.
- * @param   cells The given number of Embryo_Cells.
- * @return  The address of the new memory region on success.
- *          @c EMBRYO_CELL_NONE otherwise.
- * @ingroup Embryo_Heap_Group
- */
 EAPI Embryo_Cell
 embryo_data_heap_push(Embryo_Program *ep, int cells)
 {
    Embryo_Header *hdr;
-   unsigned char *data;
    Embryo_Cell    addr;
 
    if ((!ep) || (!ep->base)) return EMBRYO_CELL_NONE;
    hdr = (Embryo_Header *)ep->base;
-   data = ep->base + (int)hdr->dat;
    if (ep->stk - ep->hea - (cells * sizeof(Embryo_Cell)) < STKMARGIN)
      return EMBRYO_CELL_NONE;
    addr = ep->hea;
@@ -963,13 +744,6 @@ embryo_data_heap_push(Embryo_Program *ep, int cells)
    return addr;
 }
 
-/**
- * Decreases the size of the heap of the given virtual machine down to the
- * given size.
- * @param   ep      The program with the given virtual machine.
- * @param   down_to The given size.
- * @ingroup Embryo_Heap_Group
- */
 EAPI void
 embryo_data_heap_pop(Embryo_Program *ep, Embryo_Cell down_to)
 {
@@ -978,19 +752,7 @@ embryo_data_heap_pop(Embryo_Program *ep, Embryo_Cell down_to)
    if (ep->hea > down_to) ep->hea = down_to;
 }
 
-/**
- * @defgroup Embryo_Run_Group Program Run Functions
- *
- * Functions that are involved in actually running functions in an
- * Embryo program.
- */
 
-/**
- * Returns the number of virtual machines are running for the given program.
- * @param   ep The given program.
- * @return  The number of virtual machines running.
- * @ingroup Embryo_Run_Group
- */
 EAPI int
 embryo_program_recursion_get(Embryo_Program *ep)
 {
@@ -1016,25 +778,7 @@ embryo_program_recursion_get(Embryo_Program *ep)
 #define BREAK break
 #endif
 
-/**
- * Runs the given function of the given Embryo program in the current
- * virtual machine.  The parameter @p fn can be found using
- * @ref embryo_program_function_find.
- *
- * @note For Embryo to be able to run a function, it must have been
- *       declared @c public in the Small source code.
- *
- * @param   ep The given program.
- * @param   fn The given function.  Normally "main", in which case the
- *             constant @c EMBRYO_FUNCTION_MAIN can be used.
- * @return  @c EMBRYO_PROGRAM_OK on success.  @c EMBRYO_PROGRAM_SLEEP if the
- *          program is halted by the Small @c sleep call.
- *          @c EMBRYO_PROGRAM_FAIL if there is an error.
- *          @c EMBRYO_PROGRAM_TOOLONG if the program executes for longer than
- *          it is allowed to in abstract machine instruction count.
- * @ingroup Embryo_Run_Group
- */
-EAPI int
+EAPI Embryo_Status
 embryo_program_run(Embryo_Program *ep, Embryo_Function fn)
 {
    Embryo_Header    *hdr;
@@ -2055,7 +1799,7 @@ embryo_program_run(Embryo_Program *ep, Embryo_Function fn)
 
 		       entry_name = GETENTRYNAME(hdr, func_entry);
 		       if (i == offs)
-			 printf("EMBRYO: CALL [%i] %s() non-existant!\n", i, entry_name);
+			 printf("EMBRYO: CALL [%i] %s() non-existent!\n", i, entry_name);
 		       func_entry =
 			 (Embryo_Func_Stub *)((unsigned char *)func_entry + hdr->defsize);
 		    }
@@ -2142,14 +1886,6 @@ embryo_program_run(Embryo_Program *ep, Embryo_Function fn)
    return EMBRYO_PROGRAM_OK;
 }
 
-/**
- * Retreives the return value of the last called function of the given
- * program.
- * @param   ep The given program.
- * @return  An Embryo_Cell representing the return value of the function
- *          that was last called.
- * @ingroup Embryo_Run_Group
- */
 EAPI Embryo_Cell
 embryo_program_return_value_get(Embryo_Program *ep)
 {
@@ -2157,54 +1893,6 @@ embryo_program_return_value_get(Embryo_Program *ep)
    return ep->retval;
 }
 
-/**
- * Sets the maximum number of abstract machine cycles any given program run
- * can execute before being put to sleep and returning.
- *
- * @param   ep The given program.
- * @param   max The number of machine cycles as a limit.
- *
- * This sets the maximum number of abstract machine (virtual machine)
- * instructions that a single run of an embryo function (even if its main)
- * can use before embryo embryo_program_run() reutrns with the value
- * EMBRYO_PROGRAM_TOOLONG. If the function fully executes within this number
- * of cycles, embryo_program_run() will return as normal with either
- * EMBRYO_PROGRAM_OK, EMBRYO_PROGRAM_FAIL or EMBRYO_PROGRAM_SLEEP. If the
- * run exceeds this instruction count, then EMBRYO_PROGRAM_TOOLONG will be
- * returned indicating the program exceeded its run count. If the app wishes
- * to continue running this anyway - it is free to process its own events or
- * whatever it wants and continue the function by calling
- * embryo_program_run(program, EMBRYO_FUNCTION_CONT); which will start the
- * run again until the instruction count is reached. This can keep being done
- * to allow the calling program to still be able to control things outside the
- * embryo function being called. If the maximum run cycle count is 0 then the
- * program is allowed to run forever only returning when it is done.
- *
- * It is important to note that abstract machine cycles are NOT the same as
- * the host machine cpu cycles. They are not fixed in runtime per cycle, so
- * this is more of a helper tool than a way to HARD-FORCE a script to only
- * run for a specific period of time. If the cycle count is set to something
- * low like 5000 or 1000, then every 1000 (or 5000) cycles control will be
- * returned to the calling process where it can check a timer to see if a
- * physical runtime limit has been elapsed and then abort runing further
- * assuming a "runaway script" or keep continuing the script run. This
- * limits resolution to only that many cycles which do not take a determined
- * amount of time to execute, as this varies from cpu to cpu and also depends
- * on how loaded the system is. Making the max cycle run too low will
- * impact performance requiring the abstract machine to do setup and teardown
- * cycles too often comapred to cycles actually executed.
- *
- * Also note it does NOT include nested abstract machines. IF this abstract
- * machine run calls embryo script that calls a native function that in turn
- * calls more embryo script, then the 2nd (and so on) levels are not included
- * in this run count. They can set their own max instruction count values
- * separately.
- *
- * The default max cycle run value is 0 in any program until set with this
- * function.
- *
- * @ingroup Embryo_Run_Group
- */
 EAPI void
 embryo_program_max_cycle_run_set(Embryo_Program *ep, int max)
 {
@@ -2213,18 +1901,6 @@ embryo_program_max_cycle_run_set(Embryo_Program *ep, int max)
    ep->max_run_cycles = max;
 }
 
-/**
- * Retreives the maximum number of abstract machine cycles a program is allowed
- * to run.
- * @param   ep The given program.
- * @return  The number of cycles a run cycle is allowed to run for this
- *          program.
- *
- * This returns the value set by embryo_program_max_cycle_run_set(). See
- * embryo_program_max_cycle_run_set() for more information.
- *
- * @ingroup Embryo_Run_Group
- */
 EAPI int
 embryo_program_max_cycle_run_get(Embryo_Program *ep)
 {
@@ -2232,20 +1908,7 @@ embryo_program_max_cycle_run_get(Embryo_Program *ep)
    return ep->max_run_cycles;
 }
 
-/**
- * @defgroup Embryo_Parameter_Group Function Parameter Functions
- *
- * Functions that set parameters for the next function that is called.
- */
 
-/**
- * Pushes an Embryo_Cell onto the function stack to use as a parameter for
- * the next function that is called in the given program.
- * @param   ep   The given program.
- * @param   cell The Embryo_Cell to push onto the stack.
- * @return  @c 1 if successful.  @c 0 otherwise.
- * @ingroup Embryo_Parameter_Group
- */
 EAPI int
 embryo_parameter_cell_push(Embryo_Program *ep, Embryo_Cell cell)
 {
@@ -2268,14 +1931,6 @@ embryo_parameter_cell_push(Embryo_Program *ep, Embryo_Cell cell)
    return 1;
 }
 
-/**
- * Pushes a string onto the function stack to use as a parameter for the
- * next function that is called in the given program.
- * @param   ep The given program.
- * @param   str The string to push onto the stack.
- * @return  @c 1 if successful.  @c 0 otherwise.
- * @ingroup Embryo_Parameter_Group
- */
 EAPI int
 embryo_parameter_string_push(Embryo_Program *ep, const char *str)
 {
@@ -2307,24 +1962,15 @@ embryo_parameter_string_push(Embryo_Program *ep, const char *str)
    return 1;
 }
 
-/**
- * Pushes an array of Embryo_Cells onto the function stack to be used as
- * parameters for the next function that is called in the given program.
- * @param   ep    The given program.
- * @param   cells The array of Embryo_Cells.
- * @param   num   The number of cells in @p cells.
- * @return  @c 1 if successful.  @c 0 otherwise.
- * @ingroup Embryo_Parameter_Group
- */
 EAPI int
 embryo_parameter_cell_array_push(Embryo_Program *ep, Embryo_Cell *cells, int num)
 {
    Embryo_Param *pr;
    Embryo_Cell *cell_array;
 
-   cell_array = malloc(num * sizeof(Embryo_Cell));
    if ((!cells) || (num <= 0))
      return embryo_parameter_cell_push(ep, 0);
+   cell_array = malloc(num * sizeof(Embryo_Cell));
    ep->params_size++;
    if (ep->params_size > ep->params_alloc)
      {

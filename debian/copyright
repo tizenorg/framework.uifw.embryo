@@ -1,18 +1,46 @@
-This package was debianized by Falko Schmidt <falko@alphagemini.org> on
-Fri,  4 Apr 2008 15:43:15 +0000.
+This package was debianized by Victor Koeppel <v_koeppel@yahoo.fr> on
+Wed, 24 Mar 2004 15:44:55 +0100.
 
-The source is from the e17/libs/embryo module of the enlightenment CVS
-tree. For more information, see:
+It was downloaded from http://download.enlightenment.org/
 
- http://www.enlightenment.org
-
-Upstream Author:
-	
-	Carsten Haitzler <raster@rasterman.com>
+Upstream Author: Carsten Haitzler <raster@rasterman.com>
 
 Copyright:
 
-	Copyright (C) 2000 Carsten Haitzler and various contributors (see AUTHORS)
+  Copyright (C) 2000 Carsten Haitzler and various contributors (see AUTHORS)
+
+Additional copyrights:
+  src/bin: embryo_cc_amx.h, embryo_cc_osdefs.h, embryo_cc_scvars.c,
+  embryo_cc_sc[1-7].c, embryo_cc_scvars.c: Copyright ITB CompuPhase, 1997-2003
+
+  src/bin/embryo_cc_sc{5,7}.scp: Copyright (c) ITB CompuPhase, 2000-2003
+  src/bin/embryo_cc_sclist.c: Copyright (c) ITB CompuPhase, 2001-2003
+  src/bin/embryo_cc_scexpand.c: Copyright 1996 Philip Gage
+  src/bin/embryo_cc_sc.h: Copyright R. Cain, 1980, J.E. Hendrix, 1982, 1983,
+                          T. Riemersma, 1997-2003
+
+  src/lib/embryo_amx.c: Copyright (c) ITB CompuPhase, 1997-2003
+                        Portions Copyright (c) Carsten Haitzler, 2004
+  src/lib/embryo_float.c: Copyright (c) Artran, Inc. 1999
+                          Portions Copyright (c) Carsten Haitzler, 2004
+
+  These files are all licensed under the zLib license:
+    This software is provided "as-is", without any express or implied warranty.
+    In no event will the authors be held liable for any damages arising from
+    the use of this software.
+  
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+  
+    1.  The origin of this software must not be misrepresented; you must not
+        claim that you wrote the original software. If you use this software in
+        a product, an acknowledgment in the product documentation would be
+        appreciated but is not required.
+    2.  Altered source versions must be plainly marked as such, and must not be
+        misrepresented as being the original software.
+    3.  This notice may not be removed or altered from any source distribution.
+
 License:
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
