@@ -1,0 +1,26 @@
+#!/usr/bin/make -f
+
+include /usr/share/cdbs/1/class/autotools.mk
+include /usr/share/cdbs/1/rules/debhelper.mk
+
+DEB_DH_STRIP_ARGS := --dbg-package=libembryo-dbg
+DEB_CONFIGURE_EXTRA_FLAGS :=
+DEB_CONFIGURE_SCRIPT := ./autogen.sh
+DEB_MAKE_CLEAN_TARGET := distclean
+#DEB_SOURCE_VERSION := $(shell grep AC_INIT $(DEB_SRCDIR)/configure.ac | cut -d, -f2 | tr -d ' []')
+DEB_SOURCE_VERSION := 0.9.9.0
+CFLAGS += -fvisibility=hidden -fPIC
+LDFLAGS += -fvisibility=hidden -Wl,--hash-style=both -Wl,--as-needed
+
+#build/libembryo-doc::
+#	cd $(DEB_SRCDIR)/doc && make doc
+
+#install/libembryo-doc::
+#	tar jxf embryo-*-doc.tar.bz2 -C $(DEB_SRCDIR)
+#	cp -R $(DEB_SRCDIR)/doc/html $(DEB_SRCDIR)/debian/libembryo-doc/usr/share/doc/libembryo-doc/
+#	cp -R $(DEB_SRCDIR)/embryo-$(DEB_SOURCE_VERSION)-doc/doc/html debian/libembryo-doc/usr/share/doc/libembryo-doc/
+#	rm -rf $(DEB_SRCDIR)/doc/
+
+clean::
+	[ ! -f Makefile ] || make distclean
+	rm -f embryo-*.tar.* embryo-*.cdbs-config_list
