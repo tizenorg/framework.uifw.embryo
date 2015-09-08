@@ -489,7 +489,7 @@ sc_addtag(char *name)
 
    /* tagname currently unknown, add it */
    tag = last + 1;		/* guaranteed not to exist already */
-   if (isupper(*name))
+   if (sc_isupper(*name))
       tag |= (int)FIXEDTAG;
    append_constval(&tagname_tab, name, (cell) tag, 0);
    return tag;
@@ -590,7 +590,8 @@ parseoptions(int argc, char **argv, char *iname, char *oname,
       {
 	 /* include directory */
 	 i++;
-	 strncpy(str, argv[i], sizeof(str));
+	 strncpy(str, argv[i], sizeof(str) -1);
+	 str[sizeof(str) - 1] = '\0';
 
 	 len = strlen(str);
 	 if (str[len - 1] != DIRSEP_CHAR)
@@ -652,6 +653,8 @@ setconfig(char *root)
    char                path[PATH_MAX];
    char               *ptr;
    int                 len;
+
+   path[sizeof(path) - 1] = 0;
 
    /* add the default "include" directory */
    if (root)
@@ -1547,7 +1550,8 @@ decl_const(int vclass)
    if (lex(&val, &str) != tSYMBOL)	/* read in (new) token */
       error(20, str);		/* invalid symbol name */
    symbolline = fline;		/* save line where symbol was found */
-   strcpy(constname, str);	/* save symbol name */
+   strncpy(constname, str, sizeof(constname) - 1);	/* save symbol name */
+   constname[sizeof(constname) - 1] = 0;
    needtoken('=');
    constexpr(&val, &exprtag);	/* get value */
    needtoken(tTERM);
@@ -1597,7 +1601,8 @@ decl_enum(int vclass)
     * tag was set) */
    if (lex(&val, &str) == tSYMBOL)
      {				/* read in (new) token */
-	strcpy(enumname, str);	/* save enum name (last constant) */
+	strncpy(enumname, str, sizeof(enumname) - 1);	/* save enum name (last constant) */
+	enumname[sizeof(enumname) - 1] = 0;
 	if (!explicittag)
 	   tag = sc_addtag(enumname);
      }
@@ -1642,7 +1647,8 @@ decl_enum(int vclass)
 	tok = lex(&val, &str);	/* read in (new) token */
 	if (tok != tSYMBOL && tok != tLABEL)
 	   error(20, str);	/* invalid symbol name */
-	strcpy(constname, str);	/* save symbol name */
+	strncpy(constname, str, sNAMEMAX); /* save symbol name */
+	constname[sNAMEMAX] = 0;
 	size = increment;	/* default increment of 'val' */
 	if (tok == tLABEL || matchtoken(':'))
 	   constexpr(&size, NULL);	/* get size */
@@ -1947,7 +1953,7 @@ tag2str(char *dest, int tag)
    tag &= TAGMASK;
    assert(tag >= 0);
    sprintf(dest, "0%x", tag);
-   return isdigit(dest[1]) ? &dest[1] : dest;
+   return sc_isdigit(dest[1]) ? &dest[1] : dest;
 }
 
 char       *
@@ -1993,7 +1999,7 @@ parse_funcname(char *fname, int *tag1, int *tag2, char *opname)
      }				/* if */
    assert(!unary || *tag1 == 0);
    assert(*ptr != '\0');
-   for (name = opname; !isdigit(*ptr);)
+   for (name = opname; !sc_isdigit(*ptr);)
       *name++ = *ptr++;
    *name = '\0';
    *tag2 = (int)strtol(ptr, NULL, 16);
@@ -2008,7 +2014,7 @@ funcdisplayname(char *dest, char *funcname)
    constvalue         *tagsym[2];
    int                 unary;
 
-   if (isalpha(*funcname) || *funcname == '_' || *funcname == PUBLIC_CHAR
+   if (sc_isalpha(*funcname) || *funcname == '_' || *funcname == PUBLIC_CHAR
        || *funcname == '\0')
      {
 	if (dest != funcname)
@@ -2468,7 +2474,8 @@ declargs(symbol * sym)
 	       case tSYMBOL:
 		  if (argcnt >= sMAXARGS)
 		     error(45);	/* too many function arguments */
-		  strcpy(name, ptr);	/* save symbol name */
+		  strncpy(name, ptr, sizeof(name) - 1);	/* save symbol name */
+		  name[sizeof(name) - 1] = 0;
 		  if (name[0] == PUBLIC_CHAR)
 		     error(56, name);	/* function arguments cannot be public */
 		  if (numtags == 0)
@@ -2624,7 +2631,8 @@ doarg(char *name, int ident, int offset, int tags[], int numtags,
    cell                size;
    int                 idxtag[sDIMEN_MAX];
 
-   strcpy(arg->name, name);
+   strncpy(arg->name, name, sizeof(arg->name) - 1);
+   arg->name[sizeof(arg->name) - 1] = 0;
    arg->hasdefault = FALSE;	/* preset (most common case) */
    arg->defvalue.val = 0;	/* clear */
    arg->defvalue_tag = 0;
@@ -3017,7 +3025,8 @@ insert_constval(constvalue * prev, constvalue * next, char *name,
    if (!(cur = (constvalue *)malloc(sizeof(constvalue))))
       error(103);		/* insufficient memory (fatal error) */
    memset(cur, 0, sizeof(constvalue));
-   strcpy(cur->name, name);
+   strncpy(cur->name, name, sizeof(cur->name) - 1);
+   cur->name[sizeof(cur->name) - 1] = 0;
    cur->value = val;
    cur->index = idx;
    cur->next = next;
@@ -3788,12 +3797,14 @@ doswitch(void)
    if (swdefault == FALSE)
      {
 	/* store lbl_exit as the "none-matched" label in the switch table */
-	strcpy(labelname, itoh(lbl_exit));
+	strncpy(labelname, itoh(lbl_exit), sizeof(labelname) - 1);
+        labelname[sizeof(labelname) - 1] = 0;
      }
    else
      {
 	/* lbl_case holds the label of the "default" clause */
-	strcpy(labelname, itoh(lbl_case));
+        strncpy(labelname, itoh(lbl_case), sizeof(labelname) - 1);
+        labelname[sizeof(labelname) - 1] = 0;
      }				/* if */
    ffcase(casecount, labelname, TRUE);
    /* generate the rest of the table */

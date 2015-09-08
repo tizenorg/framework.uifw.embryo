@@ -205,6 +205,8 @@ _embryo_program_init(Embryo_Program *ep, void *code)
 #endif
    ep->flags = EMBRYO_FLAG_RELOC;
 
+#ifdef WORDS_BIGENDIAN
+/* until we do more... this is only used for bigendian */
      {
 	Embryo_Cell cip, code_size, cip_end;
 	Embryo_Cell *code;
@@ -220,9 +222,10 @@ _embryo_program_init(Embryo_Program *ep, void *code)
 #ifdef WORDS_BIGENDIAN
 	     embryo_swap_32(&(code[cip]));
 #endif
-
 	  }
      }
+#endif
+
    /* init native api for handling floating point - default in embryo */
    _embryo_args_init(ep);
    _embryo_fp_init(ep);

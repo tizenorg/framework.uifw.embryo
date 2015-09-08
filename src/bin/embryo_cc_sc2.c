@@ -443,9 +443,9 @@ dtoi(cell * val, char *curptr)
 
    *val = 0;
    ptr = curptr;
-   if (!isdigit(*ptr))		/* should start with digit */
+   if (!sc_isdigit(*ptr))		/* should start with digit */
       return 0;
-   while (isdigit(*ptr) || *ptr == '_')
+   while (sc_isdigit(*ptr) || *ptr == '_')
      {
 	if (*ptr != '_')
 	   *val = (*val * 10) + (*ptr - '0');
@@ -453,7 +453,7 @@ dtoi(cell * val, char *curptr)
      }				/* while */
    if (alphanum(*ptr))		/* number must be delimited by non-alphanumerical */
       return 0;
-   if (*ptr == '.' && isdigit(*(ptr + 1)))
+   if (*ptr == '.' && sc_isdigit(*(ptr + 1)))
       return 0;			/* but a fractional part must not be present */
    return (int)(ptr - curptr);
 }
@@ -471,18 +471,18 @@ htoi(cell * val, char *curptr)
 
    *val = 0;
    ptr = curptr;
-   if (!isdigit(*ptr))		/* should start with digit */
+   if (!sc_isdigit(*ptr))		/* should start with digit */
       return 0;
    if (*ptr == '0' && *(ptr + 1) == 'x')
      {				/* C style hexadecimal notation */
 	ptr += 2;
-	while (isxdigit(*ptr) || *ptr == '_')
+	while (sc_isxdigit(*ptr) || *ptr == '_')
 	  {
 	     if (*ptr != '_')
 	       {
-		  assert(isxdigit(*ptr));
+		  assert(sc_isxdigit(*ptr));
 		  *val = *val << 4;
-		  if (isdigit(*ptr))
+		  if (sc_isdigit(*ptr))
 		     *val += (*ptr - '0');
 		  else
 		     *val += (tolower(*ptr) - 'a' + 10);
@@ -554,9 +554,9 @@ ftoi(cell * val, char *curptr)
    fnum = 0.0;
    dnum = 0L;
    ptr = curptr;
-   if (!isdigit(*ptr))		/* should start with digit */
+   if (!sc_isdigit(*ptr))		/* should start with digit */
       return 0;
-   while (isdigit(*ptr) || *ptr == '_')
+   while (sc_isdigit(*ptr) || *ptr == '_')
      {
 	if (*ptr != '_')
 	  {
@@ -568,12 +568,12 @@ ftoi(cell * val, char *curptr)
    if (*ptr != '.')
       return 0;			/* there must be a period */
    ptr++;
-   if (!isdigit(*ptr))		/* there must be at least one digit after the dot */
+   if (!sc_isdigit(*ptr))		/* there must be at least one digit after the dot */
       return 0;
    ffrac = 0.0;
    fmult = 1.0;
    ignore = FALSE;
-   while (isdigit(*ptr) || *ptr == '_')
+   while (sc_isdigit(*ptr) || *ptr == '_')
      {
 	if (*ptr != '_')
 	  {
@@ -605,10 +605,10 @@ ftoi(cell * val, char *curptr)
 	  {
 	     sign = 1;
 	  }			/* if */
-	if (!isdigit(*ptr))	/* 'e' should be followed by a digit */
+	if (!sc_isdigit(*ptr))	/* 'e' should be followed by a digit */
 	   return 0;
 	exp = 0;
-	while (isdigit(*ptr))
+	while (sc_isdigit(*ptr))
 	  {
 	     exp = (exp * 10) + (*ptr - '0');
 	     ptr++;
@@ -1044,7 +1044,7 @@ command(void)
 		       while ((*lptr <= ' ') && (*lptr != '\0'))
 			  lptr++;
 		       for (i = 0; 
-                            (i < (int)(sizeof(name))) && 
+                            (i < (int)(sizeof(name)) - 1) &&
                             (alphanum(*lptr));
 			    i++, lptr++)
 			  name[i] = *lptr;
@@ -1108,8 +1108,8 @@ command(void)
 			    while ((*lptr <= ' ') && (*lptr != '\0'))
 			       lptr++;
 			    for (i = 0; 
-                                 (i < (int)(sizeof(name))) && 
-                                 (isalpha(*lptr));
+                                 (i < (int)(sizeof(name)) - 1) &&
+                                 (sc_isalpha(*lptr));
 				 i++, lptr++)
 			       name[i] = *lptr;
 			    name[i] = '\0';
@@ -1166,12 +1166,12 @@ command(void)
      case tpEMIT:
 	{
 	   /* write opcode to output file */
-	   char                name[40];
+	   char                name[41];
 	   int                 i;
 
 	   while (*lptr <= ' ' && *lptr != '\0')
 	      lptr++;
-	   for (i = 0; i < 40 && (isalpha(*lptr) || *lptr == '.'); i++, lptr++)
+	   for (i = 0; i < 40 && (sc_isalpha(*lptr) || *lptr == '.'); i++, lptr++)
 	      name[i] = (char)tolower(*lptr);
 	   name[i] = '\0';
 	   stgwrite("\t");
@@ -1219,7 +1219,10 @@ command(void)
 			if (tok < 256)
 			   sprintf(s2, "%c", (char)tok);
 			else
-			   strcpy(s2, sc_tokens[tok - tFIRST]);
+			  {
+			     strncpy(s2, sc_tokens[tok - tFIRST], 19);
+			     s2[19] = 0;
+			  }
 			error(1, sc_tokens[tSYMBOL - tFIRST], s2);
 			break;
 		     }		/* case */
@@ -1253,7 +1256,7 @@ command(void)
 		  }		/* while */
 		end = lptr;
 		/* check pattern to match */
-		if (!isalpha(*start) && *start != '_')
+		if (!sc_isalpha(*start) && *start != '_')
 		  {
 		     error(74);	/* pattern must start with an alphabetic character */
 		     break;
@@ -1272,7 +1275,7 @@ command(void)
 		  }		/* while */
 		pattern[count] = '\0';
 		/* special case, erase trailing variable, because it could match anything */
-		if (count >= 2 && isdigit(pattern[count - 1])
+		if (count >= 2 && sc_isdigit(pattern[count - 1])
 		    && pattern[count - 2] == '%')
 		   pattern[count - 2] = '\0';
 		/* find substitution string */
@@ -1313,7 +1316,7 @@ command(void)
 		substitution[count] = '\0';
 		/* check whether the definition already exists */
 		for (prefixlen = 0, start = pattern;
-		     isalpha(*start) || isdigit(*start) || *start == '_';
+		     sc_isalpha(*start) || sc_isdigit(*start) || *start == '_';
 		     prefixlen++, start++)
 		   /* nothing */ ;
 		assert(prefixlen > 0);
@@ -1484,7 +1487,7 @@ substpattern(char *line, size_t buffersize, char *pattern, char *substitution)
    memset(args, 0, sizeof args);
 
    /* check the length of the prefix */
-   for (prefixlen = 0, s = pattern; isalpha(*s) || isdigit(*s) || *s == '_';
+   for (prefixlen = 0, s = pattern; sc_isalpha(*s) || sc_isdigit(*s) || *s == '_';
 	prefixlen++, s++)
       /* nothing */ ;
    assert(prefixlen > 0);
@@ -1501,7 +1504,7 @@ substpattern(char *line, size_t buffersize, char *pattern, char *substitution)
 	if (*p == '%')
 	  {
 	     p++;		/* skip '%' */
-	     if (isdigit(*p))
+	     if (sc_isdigit(*p))
 	       {
 		  arg = *p - '0';
 		  assert(arg >= 0 && arg <= 9);
@@ -1596,7 +1599,7 @@ substpattern(char *line, size_t buffersize, char *pattern, char *substitution)
 	/* calculate the length of the substituted string */
 	for (e = substitution, len = 0; *e != '\0'; e++)
 	  {
-	     if (*e == '%' && isdigit(*(e + 1)))
+	     if (*e == '%' && sc_isdigit(*(e + 1)))
 	       {
 		  arg = *(e + 1) - '0';
 		  assert(arg >= 0 && arg <= 9);
@@ -1620,7 +1623,7 @@ substpattern(char *line, size_t buffersize, char *pattern, char *substitution)
 	     strdel(line, (int)(s - line));
 	     for (e = substitution, s = line; *e != '\0'; e++)
 	       {
-		  if (*e == '%' && isdigit(*(e + 1)))
+		  if (*e == '%' && sc_isdigit(*(e + 1)))
 		    {
 		       arg = *(e + 1) - '0';
 		       assert(arg >= 0 && arg <= 9);
@@ -1660,7 +1663,7 @@ substallpatterns(char *line, int buffersize)
 	/* find the start of a prefix (skip all non-alphabetic characters),
 	 * also skip strings
 	 */
-	while (!isalpha(*start) && *start != '_' && *start != '\0')
+	while (!sc_isalpha(*start) && *start != '_' && *start != '\0')
 	  {
 	     /* skip strings */
 	     if (is_startstring(start))
@@ -1676,7 +1679,7 @@ substallpatterns(char *line, int buffersize)
 	/* get the prefix (length), look for a matching definition */
 	prefixlen = 0;
 	end = start;
-	while (isalpha(*end) || isdigit(*end) || *end == '_')
+	while (sc_isalpha(*end) || sc_isdigit(*end) || *end == '_')
 	  {
 	     prefixlen++;
 	     end++;
@@ -2173,13 +2176,19 @@ needtoken(int token)
 	if (token < 256)
 	   sprintf(s1, "%c", (char)token);	/* single character token */
 	else
-	   strcpy(s1, sc_tokens[token - tFIRST]);	/* multi-character symbol */
+      {
+         strncpy(s1, sc_tokens[token - tFIRST], 19); /* multi-character symbol */
+         s1[19] = 0;
+      }
 	if (!freading)
 	   strcpy(s2, "-end of file-");
 	else if (_lextok < 256)
 	   sprintf(s2, "%c", (char)_lextok);
 	else
-	   strcpy(s2, sc_tokens[_lextok - tFIRST]);
+	  {
+        strncpy(s2, sc_tokens[_lextok - tFIRST], 19);
+		 s2[19] = 0;
+	  }
 	error(1, s1, s2);	/* expected ..., but found ... */
 	return FALSE;
      }				/* if */
@@ -2318,7 +2327,7 @@ litchar(char **lptr, int rawmode)
 		  cptr += 1;
 		  break;
 	       default:
-		  if (isdigit(*cptr))
+		  if (sc_isdigit(*cptr))
 		    {		/* \ddd */
 		       c = 0;
 		       while (*cptr >= '0' && *cptr <= '9')	/* decimal! */
@@ -2346,7 +2355,7 @@ litchar(char **lptr, int rawmode)
 static int
 alpha(char c)
 {
-   return (isalpha(c) || c == '_' || c == PUBLIC_CHAR);
+   return (sc_isalpha(c) || c == '_' || c == PUBLIC_CHAR);
 }
 
 /*  alphanum
@@ -2356,7 +2365,7 @@ alpha(char c)
 int
 alphanum(char c)
 {
-   return (alpha(c) || isdigit(c));
+   return (alpha(c) || sc_isdigit(c));
 }
 
 /* The local variable table must be searched backwards, so that the deepest
@@ -2476,7 +2485,7 @@ delete_symbols(symbol * root, int level, int delete_labels,
 	     /* for user defined operators, also remove the "prototyped" flag, as
 	      * user-defined operators *must* be declared before use
 	      */
-	     if (sym->ident == iFUNCTN && !isalpha(*sym->name)
+	     if (sym->ident == iFUNCTN && !sc_isalpha(*sym->name)
 		 && *sym->name != '_' && *sym->name != PUBLIC_CHAR)
 		sym->usage &= ~uPROTOTYPED;
 	     root = sym;	/* skip the symbol */
@@ -2675,7 +2684,8 @@ addsym(char *name, cell addr, int ident, int vclass, int tag, int usage)
    *refer = NULL;
 
    /* first fill in the entry */
-   strcpy(entry.name, name);
+   strncpy(entry.name, name, sizeof(entry.name) - 1);
+   entry.name[sizeof(entry.name) - 1] = 0;
    entry.hash = namehash(name);
    entry.addr = addr;
    entry.vclass = (char)vclass;

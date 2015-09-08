@@ -35,6 +35,10 @@ embryo_cc_CFLAGS = @EMBRYO_CFLAGS@
 embryo_cc_LDADD = $(top_builddir)/src/lib/libembryo.la @EVIL_LIBS@ @EINA_LIBS@ -lm
 embryo_cc_LDFLAGS = @lt_enable_auto_import@
 
+### TIZEN_ONLY(20150410): Apply ASLR to executable files.
+embryo_cc_LDFLAGS += -pie
+embryo_cc_CFLAGS += -fPIE
+
 EXTRA_DIST = \
 embryo_cc_sc5.scp \
 embryo_cc_sc7.scp

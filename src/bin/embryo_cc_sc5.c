@@ -74,14 +74,16 @@ error(int number, ...)
 
    if (number < 100)
      {
-	msg = errmsg[number - 1];
-	errflag = TRUE;	/* set errflag (skip rest of erroneous expression) */
-	errnum++;
+	    if (number > 74) number = 74;
+	    msg = errmsg[number - 1];
+	    errflag = TRUE;	/* set errflag (skip rest of erroneous expression) */
+	    errnum++;
      }
    else if (number < 200)
      {
-	msg = fatalmsg[number - 100];
-	errnum++; /* a fatal error also counts as an error */
+	    if (number > 107) number = 107;
+	    msg = fatalmsg[number - 100];
+	    errnum++; /* a fatal error also counts as an error */
      }
    else
      {
